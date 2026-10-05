@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vietAppsConfig>
+    <!-- THÔNG TIN THƯƠNG HIỆU & TIÊU ĐỀ -->
+    <brand>
+        <masterName>vietApps</masterName>
+        <appName>vietBook</appName>
+        <badge>FREE</badge>
+        <tagline>Hệ sinh thái ứng dụng miễn phí phục vụ cộng đồng</tagline>
+        <appTitle>Thư viện tra cứu &amp; Tải sách giáo khoa điện tử</appTitle>
+        <heroTitle>Kho sách điện tử &amp; Sách giáo viên toàn diện</heroTitle>
+        <appDescription>Hệ thống tra cứu tức thì và tải trọn bộ sách giáo viên (SGV), sách giáo khoa (SGK), sách bài tập (SBT) chất lượng gốc từ Bộ GD&amp;ĐT (Bộ thống nhất, Chân trời sáng tạo, Cánh diều).</appDescription>
+        <copyright>© 2026 vietApps • vietBook – Thư viện sách điện tử</copyright>
+        <supportEmail>vietapps.official@gmail.com</supportEmail>
+        <connectMessage>Kết nối với chúng tôi để xem hướng dẫn, cập nhật sách mới và sử dụng các tiện ích miễn phí</connectMessage>
+        <!-- Link Google Drive chia sẻ (có thể điền link sau khi upload xong) -->
+        <driveLink></driveLink>
+    </brand>
+
+    <!-- HỆ SINH THÁI CÁC ỨNG DỤNG -->
+    <ecosystem>
+        <app id="vietBook">
+            <name>vietBook</name>
+            <badge>Miễn phí</badge>
+            <badgeColor>#10b981</badgeColor>
+            <tagline>Thư viện tra cứu &amp; Tải sách điện tử</tagline>
+            <description>Kho sách điện tử trọn bộ từ lớp 1 đến lớp 12: Bộ SGK Thống nhất, Chân trời sáng tạo, Cánh diều. Tải nhanh chất lượng gốc miễn phí.</description>
+            <url>#</url>
+            <icon>📖</icon>
+        </app>
+        <app id="viTeach">
+            <name>vietTeach</name>
+            <badge>Miễn phí</badge>
+            <badgeColor>#2563eb</badgeColor>
+            <tagline>Tiện ích giáo dục và soạn bài giảng</tagline>
+            <description>Công cụ hỗ trợ quý thầy cô giáo tạo bài giảng, giáo án, câu hỏi trắc nghiệm và tiện ích giảng dạy trực quan tại trường học.</description>
+            <url>https://vietteach.streamlit.app/</url>
+            <icon>🎓</icon>
+        </app>
+        <app id="vifix">
+            <name>viFix</name>
+            <badge>Miễn phí</badge>
+            <badgeColor>#f59e0b</badgeColor>
+            <tagline>Quản lý sửa chữa và bảo hành điện tử</tagline>
+            <description>Công cụ dành cho kỹ thuật viên và cửa hàng: Tạo phiếu nhận máy, thẻ bảo hành điện tử QR, nhắc hẹn khách và báo cáo doanh thu.</description>
+            <url>https://vifix.vercel.app/</url>
+            <icon>🔧</icon>
+        </app>
+    </ecosystem>
+
+    <!-- KẾT NỐI MẠNG XÃ HỘI -->
+    <socials>
+        <social id="zalo">
+            <name>Zalo Group</name>
+            <enabled>true</enabled>
+            <url>https://zalo.me/g/lapbvhp0mku5bvgle0a1</url>
+            <color>#0068FF</color>
+        </social>
+        <social id="facebook_page">
+            <name>Facebook Page</name>
+            <enabled>true</enabled>
+            <url>https://www.facebook.com/vietapps.official</url>
+            <color>#1877F2</color>
+        </social>
+        <social id="facebook_group">
+            <name>Facebook Group</name>
+            <enabled>true</enabled>
+            <url>https://www.facebook.com/groups/1143352114790841</url>
+            <color>#0866FF</color>
+        </social>
+        <social id="youtube">
+            <name>YouTube</name>
+            <enabled>true</enabled>
+            <url>https://www.youtube.com/@vietApps</url>
+            <color>#FF0000</color>
+        </social>
+        <social id="tiktok">
+            <name>TikTok</name>
+            <enabled>true</enabled>
+            <url>https://www.tiktok.com/@vietapps.official</url>
+            <color>#000000</color>
+        </social>
+    </socials>
+</vietAppsConfig>

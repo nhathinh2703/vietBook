@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.tmp
+venv/
+env/
+
+# Data & Large Media
+downloaded_books/
+raw_materials/
+*.zip
+*.tar.gz
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db

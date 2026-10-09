@@ -69,13 +69,13 @@
             <url>https://vietteach.streamlit.app/</url>
             <icon>🎓</icon>
         </app>
-        <app id="vifix">
-            <name>viFix</name>
+        <app id="vietFix">
+            <name>vietFix</name>
             <badge>Miễn phí</badge>
             <badgeColor>#f59e0b</badgeColor>
             <tagline>Bảo hành điện tử &amp; Sửa chữa</tagline>
-            <description>Tạo phiếu nhận máy, thẻ bảo hành điện tử QR và nhắc hẹn khách hàng.</description>
-            <url>https://vifix.vercel.app/</url>
+            <description>Quản lý sửa chữa và bảo hành điện tử.</description>
+            <url>https://vietfix.vercel.app/</url>
             <icon>🔧</icon>
         </app>
     </ecosystem>

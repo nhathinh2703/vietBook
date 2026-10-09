@@ -333,7 +333,7 @@ render_html("""
         border-radius: 999px;
         color: #ffffff !important;
         font-size: 13px;
-        font-weight: 600;
+        font-weight: normal;
         text-decoration: none !important;
         transition: transform 0.15s, opacity 0.15s;
     }
@@ -352,7 +352,7 @@ render_html("""
     .vb-eco-link {
         color: #0f766e !important;
         text-decoration: none;
-        font-weight: 600;
+        font-weight: normal;
     }
     .vb-eco-link:hover {
         text-decoration: underline;
@@ -412,230 +412,207 @@ if "analyzed_data" not in st.session_state:
     st.session_state["analyzed_data"] = None
 
 # ==========================================
-# 4. CHIA 2 TÍNH NĂNG CHÍNH BẰNG TABS
+# 4. TẢI SÁCH TỪ LINK
 # ==========================================
-tab_download, tab_drive = st.tabs([
-    "📥 Tải sách bản gốc (NXBGD)",
-    "☁️ Kho sách Google Drive"
-])
+st.markdown("### 📥 Tải sách bản gốc (NXBGD)")
+EXAMPLE_URL = "https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-tin-hoc-12-dinh-huong-tin-hoc-ung-dung.4719365396#page=0"
 
-# ------------------------------------------
-# TAB 1: TẢI SÁCH TỪ LINK
-# ------------------------------------------
-with tab_download:
-    EXAMPLE_URL = "https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-tin-hoc-12-dinh-huong-tin-hoc-ung-dung.4719365396#page=0"
+st.markdown("##### 🔗 Dán link đọc sách hoặc môn học từ taphuan.nxbgd.vn:")
+col_inp, col_btn = st.columns([4.2, 1.2], gap="small")
 
-    st.markdown("##### 🔗 Dán link đọc sách hoặc môn học từ taphuan.nxbgd.vn:")
-    col_inp, col_btn = st.columns([4.2, 1.2], gap="small")
+with col_inp:
+    user_url = st.text_input(
+        "Nhập link taphuan.nxbgd.vn:",
+        value=st.session_state["current_url_input"],
+        placeholder="Ví dụ: https://taphuan.nxbgd.vn/tap-huan/doc-sach/...",
+        label_visibility="collapsed"
+    )
 
-    with col_inp:
-        user_url = st.text_input(
-            "Nhập link taphuan.nxbgd.vn:",
-            value=st.session_state["current_url_input"],
-            placeholder="Ví dụ: https://taphuan.nxbgd.vn/tap-huan/doc-sach/...",
-            label_visibility="collapsed"
-        )
+with col_btn:
+    analyze_btn = st.button("Tải sách", type="primary", use_container_width=True)
 
-    with col_btn:
-        analyze_btn = st.button("Tải sách", type="primary", use_container_width=True)
+st.caption(f"💡 Link mẫu dùng thử: [SGK Tin học 12 (Định hướng ứng dụng)]({EXAMPLE_URL})")
 
-    st.caption(f"💡 Link mẫu dùng thử: [SGK Tin học 12 (Định hướng ứng dụng)]({EXAMPLE_URL})")
+# Xử lý khi nhấn Tải sách hoặc URL thay đổi
+if analyze_btn or (user_url and user_url != st.session_state.get("last_analyzed_url")):
+    st.session_state["current_url_input"] = user_url
+    st.session_state["last_analyzed_url"] = user_url
+    parsed = downloader.parse_taphuan_url(user_url)
 
-    # Xử lý khi nhấn Tải sách hoặc URL thay đổi
-    if analyze_btn or (user_url and user_url != st.session_state.get("last_analyzed_url")):
-        st.session_state["current_url_input"] = user_url
-        st.session_state["last_analyzed_url"] = user_url
-        parsed = downloader.parse_taphuan_url(user_url)
+    if not parsed["valid"]:
+        st.error(parsed["message"])
+        st.session_state["analyzed_data"] = None
+    else:
+        with st.spinner("Đang lấy thông tin sách..."):
+            if parsed["type"] == "doc_sach":
+                info, err = downloader.fetch_reader_info(parsed["url"])
+                if err:
+                    st.error(err)
+                    st.session_state["analyzed_data"] = None
+                else:
+                    st.session_state["analyzed_data"] = {"type": "doc_sach", "data": info}
+            elif parsed["type"] == "chi_tiet_sach":
+                info, err = downloader.fetch_detail_editions(parsed["url"])
+                if err:
+                    st.error(err)
+                    st.session_state["analyzed_data"] = None
+                else:
+                    st.session_state["analyzed_data"] = {"type": "chi_tiet_sach", "data": info}
 
-        if not parsed["valid"]:
-            st.error(parsed["message"])
-            st.session_state["analyzed_data"] = None
+# HIỂN THỊ KẾT QUẢ TỐI GIẢN & NHANH
+if st.session_state.get("analyzed_data"):
+    res = st.session_state["analyzed_data"]
+
+    # 1. TRƯỜNG HỢP: SÁCH ĐƠN LẺ (doc_sach)
+    if res["type"] == "doc_sach":
+        book = res["data"]
+        title = book["title"]
+        page_urls = book["page_urls"]
+        total_pages = book["total_pages"]
+
+        offline_path, offline_sz = downloader.find_offline_pdf(title, CFG.get("storage_dir"))
+
+        st.markdown(f"""
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px 20px; margin: 16px 0;">
+            <div style="font-size:16px; font-weight:700; color:#0f172a;">📖 {title}</div>
+            <div style="font-size:13px; color:#64748b; margin-top:4px;">Tổng số: <strong>{total_pages} trang</strong> • Bản gốc NXB Giáo Dục</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if offline_path and os.path.exists(offline_path):
+            try:
+                with open(offline_path, "rb") as f:
+                    file_data = f.read()
+                st.download_button(
+                    label=f"💾 Tải ngay PDF có sẵn ({offline_sz:.1f} MB)",
+                    data=file_data,
+                    file_name=os.path.basename(offline_path),
+                    mime="application/pdf",
+                    type="primary",
+                    use_container_width=True
+                )
+            except Exception as e:
+                st.error(f"Lỗi đọc file: {e}")
         else:
-            with st.spinner("Đang lấy thông tin sách..."):
-                if parsed["type"] == "doc_sach":
-                    info, err = downloader.fetch_reader_info(parsed["url"])
-                    if err:
-                        st.error(err)
-                        st.session_state["analyzed_data"] = None
-                    else:
-                        st.session_state["analyzed_data"] = {"type": "doc_sach", "data": info}
-                elif parsed["type"] == "chi_tiet_sach":
-                    info, err = downloader.fetch_detail_editions(parsed["url"])
-                    if err:
-                        st.error(err)
-                        st.session_state["analyzed_data"] = None
-                    else:
-                        st.session_state["analyzed_data"] = {"type": "chi_tiet_sach", "data": info}
+            if st.button(f"📥 Bắt đầu tải PDF ({total_pages} trang)", type="primary", use_container_width=True):
+                p_bar = st.progress(0)
+                p_label = st.empty()
 
-    # HIỂN THỊ KẾT QUẢ TỐI GIẢN & NHANH
-    if st.session_state.get("analyzed_data"):
-        res = st.session_state["analyzed_data"]
+                def progress_cb(current, total, msg):
+                    pct = int((current / total) * 100) if total else 0
+                    p_bar.progress(pct)
+                    p_label.text(f"{msg} ({current}/{total})")
 
-        # 1. TRƯỜNG HỢP: SÁCH ĐƠN LẺ (doc_sach)
-        if res["type"] == "doc_sach":
-            book = res["data"]
-            title = book["title"]
-            page_urls = book["page_urls"]
-            total_pages = book["total_pages"]
+                target_save = None
+                if CFG.get("storage_dir") and os.path.exists(CFG.get("storage_dir")):
+                    target_save = os.path.join(CFG.get("storage_dir"), downloader.sanitize_filename(title) + ".pdf")
 
-            offline_path, offline_sz = downloader.find_offline_pdf(title, CFG.get("storage_dir"))
+                with st.spinner("Đang tải các trang ảnh gốc..."):
+                    pdf_bytes, sz_mb, dl_err = downloader.download_pages_and_build_pdf(
+                        page_urls=page_urls, title=title, progress_callback=progress_cb, save_path=target_save, max_workers=8
+                    )
 
-            st.markdown(f"""
-            <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px 20px; margin: 16px 0;">
-                <div style="font-size:16px; font-weight:700; color:#0f172a;">📖 {title}</div>
-                <div style="font-size:13px; color:#64748b; margin-top:4px;">Tổng số: <strong>{total_pages} trang</strong> • Bản gốc NXB Giáo Dục</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            if offline_path and os.path.exists(offline_path):
-                try:
-                    with open(offline_path, "rb") as f:
-                        file_data = f.read()
+                if dl_err:
+                    st.error(dl_err)
+                else:
+                    p_bar.progress(100)
+                    p_label.text(f"✅ Hoàn tất ({sz_mb:.1f} MB)")
                     st.download_button(
-                        label=f"💾 Tải ngay PDF có sẵn ({offline_sz:.1f} MB)",
-                        data=file_data,
-                        file_name=os.path.basename(offline_path),
+                        label=f"💾 Lưu file PDF về máy ({sz_mb:.1f} MB)",
+                        data=pdf_bytes,
+                        file_name=f"{downloader.sanitize_filename(title)}.pdf",
                         mime="application/pdf",
                         type="primary",
                         use_container_width=True
                     )
-                except Exception as e:
-                    st.error(f"Lỗi đọc file: {e}")
-            else:
-                if st.button(f"📥 Bắt đầu tải PDF ({total_pages} trang)", type="primary", use_container_width=True):
-                    p_bar = st.progress(0)
-                    p_label = st.empty()
 
-                    def progress_cb(current, total, msg):
-                        pct = int((current / total) * 100) if total else 0
-                        p_bar.progress(pct)
-                        p_label.text(f"{msg} ({current}/{total})")
+    # 2. TRƯỜNG HỢP: MÔN HỌC NHIỀU ẤN BẢN (chi_tiet_sach)
+    elif res["type"] == "chi_tiet_sach":
+        detail = res["data"]
+        st.markdown(f"##### 📚 {detail['main_title']} ({len(detail['editions'])} ấn bản)")
+        st.caption("Chọn ấn bản bạn muốn tải:")
 
-                    target_save = None
-                    if CFG.get("storage_dir") and os.path.exists(CFG.get("storage_dir")):
-                        target_save = os.path.join(CFG.get("storage_dir"), downloader.sanitize_filename(title) + ".pdf")
+        for i, ed in enumerate(detail["editions"]):
+            off_path, off_sz = downloader.find_offline_pdf(ed["title"], CFG.get("storage_dir"))
+            status_txt = f" • Có sẵn ({off_sz:.1f} MB)" if off_path else ""
 
-                    with st.spinner("Đang tải các trang ảnh gốc..."):
-                        pdf_bytes, sz_mb, dl_err = downloader.download_pages_and_build_pdf(
-                            page_urls=page_urls, title=title, progress_callback=progress_cb, save_path=target_save, max_workers=8
-                        )
+            col_name, col_action = st.columns([4.2, 1.2], gap="small")
+            with col_name:
+                st.markdown(f"""
+                <div style="padding:10px 14px; background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; display:flex; align-items:center; gap:10px; min-height:48px;">
+                    <span style="background:{ed['badge_color']}; color:#fff; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; white-space:nowrap;">{ed['type_label']}</span>
+                    <span style="font-weight:600; font-size:14px; color:#1e293b;">{ed['title']}</span>
+                    <span style="font-size:12px; color:#059669; font-weight:600; white-space:nowrap;">{status_txt}</span>
+                </div>
+                """, unsafe_allow_html=True)
+            with col_action:
+                if st.button("Chọn tải", key=f"sel_ed_{i}", use_container_width=True):
+                    st.session_state["current_url_input"] = ed["doc_url"]
+                    st.session_state["last_analyzed_url"] = ""
+                    st.rerun()
 
-                    if dl_err:
-                        st.error(dl_err)
-                    else:
-                        p_bar.progress(100)
-                        p_label.text(f"✅ Hoàn tất ({sz_mb:.1f} MB)")
-                        st.download_button(
-                            label=f"💾 Lưu file PDF về máy ({sz_mb:.1f} MB)",
-                            data=pdf_bytes,
-                            file_name=f"{downloader.sanitize_filename(title)}.pdf",
-                            mime="application/pdf",
-                            type="primary",
-                            use_container_width=True
-                        )
+st.markdown("---")
 
-        # 2. TRƯỜNG HỢP: MÔN HỌC NHIỀU ẤN BẢN (chi_tiet_sach)
-        elif res["type"] == "chi_tiet_sach":
-            detail = res["data"]
-            st.markdown(f"##### 📚 {detail['main_title']} ({len(detail['editions'])} ấn bản)")
-            st.caption("Chọn ấn bản bạn muốn tải:")
+# ==========================================
+# 5. KHO SÁCH GOOGLE DRIVE
+# ==========================================
+drive_date = CFG.get("drive_date", "")
+main_drive_url = CFG.get("drive_link", "#")
 
-            for i, ed in enumerate(detail["editions"]):
-                off_path, off_sz = downloader.find_offline_pdf(ed["title"], CFG.get("storage_dir"))
-                status_txt = f" • Có sẵn ({off_sz:.1f} MB)" if off_path else ""
+render_html(f"""
+<div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div>
+            <span style="font-size:11px; font-weight:700; color:#0f766e; letter-spacing:0.08em; text-transform:uppercase;">KHO GOOGLE DRIVE TRỰC TUYẾN</span>
+            <h3 style="margin:4px 0 6px; color:#0f172a; font-size:20px;">Kho Sách Bản Gốc Chất Lượng Cao</h3>
+            <div style="font-size:14px; color:#64748b;">
+                Chỉ cần 1 chạm có thể tải nhanh toàn bộ sách theo khối, link tải chất lượng cao Google Drive không quảng cáo.
+            </div>
+        </div>
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:8px 16px; border-radius:10px; text-align:center;">
+            <div style="font-size:16px; font-weight:800; color:#15803d;">52 GB • 1.700+ sách</div>
+            <div style="font-size:11px; color:#166534;">Cập nhật {drive_date}</div>
+        </div>
+    </div>
+</div>
+""")
 
-                col_name, col_action = st.columns([4.2, 1.2], gap="small")
-                with col_name:
-                    st.markdown(f"""
-                    <div style="padding:10px 14px; background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; display:flex; align-items:center; gap:10px; min-height:48px;">
-                        <span style="background:{ed['badge_color']}; color:#fff; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; white-space:nowrap;">{ed['type_label']}</span>
-                        <span style="font-weight:600; font-size:14px; color:#1e293b;">{ed['title']}</span>
-                        <span style="font-size:12px; color:#059669; font-weight:600; white-space:nowrap;">{status_txt}</span>
-                    </div>
-                    """, unsafe_allow_html=True)
-                with col_action:
-                    if st.button("Chọn tải", key=f"sel_ed_{i}", use_container_width=True):
-                        st.session_state["current_url_input"] = ed["doc_url"]
-                        st.session_state["last_analyzed_url"] = ""
-                        st.rerun()
+# 12 KHỐI LỚP (LỚP 1 - LỚP 12)
+grade_items = CFG.get("grade_items", [])
+if not grade_items:
+    grade_items = [{"grade": str(i), "name": f"Lớp {i}", "url": ""} for i in range(1, 13)]
 
+g_cols = st.columns(4, gap="small")
+for idx, item in enumerate(grade_items):
+    with g_cols[idx % 4]:
+        g_name = item.get("name", f"Lớp {idx+1}")
+        g_url = item.get("url", "").strip()
+        dest_url = g_url if g_url else main_drive_url
 
-# ------------------------------------------
-# TAB 2: KHO SÁCH GOOGLE DRIVE
-# ------------------------------------------
-with tab_drive:
-    drive_date = CFG.get("drive_date", "")
-    main_drive_url = CFG.get("drive_link", "#")
-
-    render_html(f"""
-    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        st.markdown(f"""
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
             <div>
-                <span style="font-size:11px; font-weight:700; color:#0f766e; letter-spacing:0.08em; text-transform:uppercase;">KHO GOOGLE DRIVE TRỰC TUYẾN</span>
-                <h3 style="margin:4px 0 6px; color:#0f172a; font-size:20px;">Bộ sách Thống nhất (Bộ GD&amp;ĐT)</h3>
-                <div style="font-size:13.5px; color:#64748b;">
-                    Tải nhanh sách giáo khoa, sách giáo viên và vở bài tập theo từng khối lớp từ Lớp 1 đến Lớp 12.
-                </div>
-            </div>
-            <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:8px 16px; border-radius:10px; text-align:center;">
-                <div style="font-size:16px; font-weight:800; color:#15803d;">Lớp 1 – 12</div>
-                <div style="font-size:11px; color:#166534;">Cập nhật {drive_date}</div>
+                <div style="font-weight:700; font-size:14px; color:#0f172a;">📘 {g_name}</div>
+                <div style="font-size:11px; color:#64748b;">SGK, SGV &amp; VBT</div>
             </div>
         </div>
-    </div>
-    """)
+        """, unsafe_allow_html=True)
+        st.link_button(f"Tải {g_name} ↗", dest_url, use_container_width=True)
 
-    # 12 KHỐI LỚP (LỚP 1 - LỚP 12)
-    grade_items = CFG.get("grade_items", [])
-    if not grade_items:
-        grade_items = [{"grade": str(i), "name": f"Lớp {i}", "url": ""} for i in range(1, 13)]
+# KHU VỰC THAM GIA CỘNG ĐỒNG ĐỂ NHẬN LINK FULL
+zalo_url = next((s["url"] for s in CFG.get("socials", []) if "zalo" in s.get("id", "").lower() or "zalo" in s.get("name", "").lower()), "https://zalo.me/g/lapbvhp0mku5bvgle0a1")
+fb_url = next((s["url"] for s in CFG.get("socials", []) if "group" in s.get("id", "").lower() or "facebook_group" in s.get("id", "").lower()), "https://www.facebook.com/groups/1143352114790841")
 
-    g_cols = st.columns(4, gap="small")
-    for idx, item in enumerate(grade_items):
-        with g_cols[idx % 4]:
-            g_name = item.get("name", f"Lớp {idx+1}")
-            g_url = item.get("url", "").strip()
-            dest_url = g_url if g_url else main_drive_url
+col_btn1, col_btn2 = st.columns(2, gap="small")
+with col_btn1:
+    st.link_button("💬 Tham gia Nhóm Zalo nhận Link Full ↗", zalo_url, type="primary", use_container_width=True)
+with col_btn2:
+    st.link_button("👥 Tham gia Nhóm Facebook nhận Link Full ↗", fb_url, use_container_width=True)
 
-            st.markdown(f"""
-            <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
-                <div>
-                    <div style="font-weight:700; font-size:14px; color:#0f172a;">📘 {g_name}</div>
-                    <div style="font-size:11px; color:#64748b;">SGK, SGV &amp; VBT</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            st.link_button(f"Tải {g_name} ↗", dest_url, use_container_width=True)
-
-    # KHU VỰC THAM GIA CỘNG ĐỒNG ĐỂ NHẬN LINK FULL
-    zalo_url = next((s["url"] for s in CFG.get("socials", []) if "zalo" in s.get("id", "").lower() or "zalo" in s.get("name", "").lower()), "https://zalo.me/g/lapbvhp0mku5bvgle0a1")
-    fb_url = next((s["url"] for s in CFG.get("socials", []) if "group" in s.get("id", "").lower() or "facebook_group" in s.get("id", "").lower()), "https://www.facebook.com/groups/1143352114790841")
-
-    render_html(f"""
-    <div style="background:linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%); border:1px solid #ccfbf1; border-radius:14px; padding:22px; margin-top:24px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-            <span style="font-size:22px;">🔒</span>
-            <div style="font-size:17px; font-weight:800; color:#0f766e;">
-                Kho sách Trọn bộ Toàn diện (52 GB • 1.700+ đầu sách)
-            </div>
-        </div>
-        <div style="font-size:13.5px; color:#475569; line-height:1.6; margin-bottom:16px;">
-            Bao gồm đầy đủ tất cả các bộ sách (Cánh Diều, Kết Nối Tri Thức, Chân Trời Sáng Tạo,...), tài liệu tập huấn và chuyên đề 12 khối lớp.<br>
-            👉 <strong>Để nhận liên kết mở Full Kho sách:</strong> Thầy cô và các bạn vui lòng tham gia nhóm Zalo hoặc Cộng đồng Facebook vietApps để lấy link ghim miễn phí.
-        </div>
-    </div>
-    """)
-
-    col_btn1, col_btn2 = st.columns(2, gap="small")
-    with col_btn1:
-        st.link_button("💬 Tham gia Nhóm Zalo nhận Link Full ↗", zalo_url, type="primary", use_container_width=True)
-    with col_btn2:
-        st.link_button("👥 Tham gia Nhóm Facebook nhận Link Full ↗", fb_url, use_container_width=True)
-
-    with st.expander("🔑 Đã là thành viên nhóm? Bấm vào đây để lấy Link Full Kho Google Drive", expanded=False):
-        st.success("Cảm ơn bạn đã tham gia cộng đồng chia sẻ tri thức vietApps!")
-        st.link_button("☁️ Mở Kho Sách Google Drive Trọn Bộ (52 GB) ↗", main_drive_url, type="primary", use_container_width=True)
-        st.code(main_drive_url, language=None)
+with st.expander("🔑 Đã là thành viên nhóm? Bấm vào đây để lấy Link Full Kho Google Drive", expanded=False):
+    st.success("Cảm ơn bạn đã tham gia cộng đồng chia sẻ tri thức vietApps!")
+    st.link_button("☁️ Mở Kho Sách Google Drive Trọn Bộ (52 GB) ↗", main_drive_url, type="primary", use_container_width=True)
+    st.code(main_drive_url, language=None)
 
 
 # ==========================================
@@ -690,7 +667,7 @@ for s in CFG.get("socials", []):
     """
 
 eco_links_html = " • ".join([
-    f'<a href="{app.get("url", "#")}" target="_blank" class="vb-eco-link">{app.get("name")}</a>'
+    f'<a href="{app.get("url", "#")}" target="_blank" class="vb-eco-link" title="{app.get("description", "")}">{app.get("name")} (Miễn phí) - {app.get("description", "")}</a>' if app.get("description") else f'<a href="{app.get("url", "#")}" target="_blank" class="vb-eco-link">{app.get("name")} (Miễn phí)</a>'
     for app in CFG.get("ecosystem", []) if app.get("url", "#") != "#"
 ])
 

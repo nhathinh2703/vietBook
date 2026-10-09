@@ -414,7 +414,15 @@ if "analyzed_data" not in st.session_state:
 # ==========================================
 # 4. TẢI SÁCH TỪ LINK
 # ==========================================
-st.markdown("### 📥 Tải sách bản gốc (NXBGD)")
+render_html(f"""
+<div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:24px; margin-bottom:24px; box-shadow:0 2px 4px rgba(0,0,0,0.04);">
+    <div style="display:inline-block; font-size:11px; font-weight:700; color:#0f766e; background:#ccfbf1; padding:4px 10px; border-radius:999px; margin-bottom:12px; letter-spacing:0.05em; text-transform:uppercase;">CÔNG CỤ TẢI SÁCH</div>
+    <h3 style="margin:0 0 8px; color:#0f172a; font-size:22px;">Tải Sách Bản Gốc NXB Giáo Dục</h3>
+    <div style="font-size:14.5px; color:#475569; line-height:1.5;">
+        Hỗ trợ dán link tải sách bản gốc chất lượng cao trực tiếp từ taphuan.nxbgd.vn.
+    </div>
+</div>
+""")
 EXAMPLE_URL = "https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-tin-hoc-12-dinh-huong-tin-hoc-ung-dung.4719365396#page=0"
 
 st.markdown("##### 🔗 Dán link đọc sách hoặc môn học từ taphuan.nxbgd.vn:")
@@ -560,59 +568,38 @@ drive_date = CFG.get("drive_date", "")
 main_drive_url = CFG.get("drive_link", "#")
 
 render_html(f"""
-<div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
-    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-        <div>
-            <span style="font-size:11px; font-weight:700; color:#0f766e; letter-spacing:0.08em; text-transform:uppercase;">KHO GOOGLE DRIVE TRỰC TUYẾN</span>
-            <h3 style="margin:4px 0 6px; color:#0f172a; font-size:20px;">Kho Sách Bản Gốc Chất Lượng Cao</h3>
-            <div style="font-size:14px; color:#64748b;">
-                Chỉ cần 1 chạm có thể tải nhanh toàn bộ sách theo khối, link tải chất lượng cao Google Drive không quảng cáo.
+<div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:24px; margin-bottom:24px; box-shadow:0 2px 4px rgba(0,0,0,0.04);">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+        <div style="flex:1; min-width:280px;">
+            <div style="display:inline-block; font-size:11px; font-weight:700; color:#0f766e; background:#ccfbf1; padding:4px 10px; border-radius:999px; margin-bottom:12px; letter-spacing:0.05em; text-transform:uppercase;">KHO GOOGLE DRIVE TRỰC TUYẾN</div>
+            <h3 style="margin:0 0 8px; color:#0f172a; font-size:22px;">Kho Sách Bản Gốc Chất Lượng Cao</h3>
+            <div style="font-size:14.5px; color:#475569; line-height:1.5;">
+                Chỉ cần 1 chạm có thể tải nhanh toàn bộ sách giáo khoa, sách giáo viên và bài tập. Link tải Google Drive tốc độ cao, không quảng cáo, cập nhật liên tục.
             </div>
-        </div>
-        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:8px 16px; border-radius:10px; text-align:center;">
-            <div style="font-size:16px; font-weight:800; color:#15803d;">52 GB • 1.700+ sách</div>
-            <div style="font-size:11px; color:#166534;">Cập nhật {drive_date}</div>
+            <div style="margin-top: 12px; display:flex; gap:12px; font-size:13px; color:#64748b;">
+                <span style="display:flex; align-items:center; gap:4px;">📦 <strong>52 GB</strong> dung lượng</span>
+                <span style="display:flex; align-items:center; gap:4px;">📚 <strong>1.700+</strong> đầu sách</span>
+                <span style="display:flex; align-items:center; gap:4px;">⏱️ Cập nhật: <strong>{drive_date}</strong></span>
+            </div>
         </div>
     </div>
 </div>
 """)
 
-# 12 KHỐI LỚP (LỚP 1 - LỚP 12)
-grade_items = CFG.get("grade_items", [])
-if not grade_items:
-    grade_items = [{"grade": str(i), "name": f"Lớp {i}", "url": ""} for i in range(1, 13)]
+st.link_button("☁️ Truy Cập Kho Sách Google Drive (Trọn Bộ 52GB) ↗", main_drive_url, type="primary", use_container_width=True)
 
-g_cols = st.columns(4, gap="small")
-for idx, item in enumerate(grade_items):
-    with g_cols[idx % 4]:
-        g_name = item.get("name", f"Lớp {idx+1}")
-        g_url = item.get("url", "").strip()
-        dest_url = g_url if g_url else main_drive_url
+st.markdown("<br>", unsafe_allow_html=True)
 
-        st.markdown(f"""
-        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
-            <div>
-                <div style="font-weight:700; font-size:14px; color:#0f172a;">📘 {g_name}</div>
-                <div style="font-size:11px; color:#64748b;">SGK, SGV &amp; VBT</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        st.link_button(f"Tải {g_name} ↗", dest_url, use_container_width=True)
-
-# KHU VỰC THAM GIA CỘNG ĐỒNG ĐỂ NHẬN LINK FULL
+# KHU VỰC THAM GIA CỘNG ĐỒNG
 zalo_url = next((s["url"] for s in CFG.get("socials", []) if "zalo" in s.get("id", "").lower() or "zalo" in s.get("name", "").lower()), "https://zalo.me/g/lapbvhp0mku5bvgle0a1")
 fb_url = next((s["url"] for s in CFG.get("socials", []) if "group" in s.get("id", "").lower() or "facebook_group" in s.get("id", "").lower()), "https://www.facebook.com/groups/1143352114790841")
 
 col_btn1, col_btn2 = st.columns(2, gap="small")
 with col_btn1:
-    st.link_button("💬 Tham gia Nhóm Zalo nhận Link Full ↗", zalo_url, type="primary", use_container_width=True)
+    st.link_button("💬 Tham gia Nhóm Zalo vietApps ↗", zalo_url, use_container_width=True)
 with col_btn2:
-    st.link_button("👥 Tham gia Nhóm Facebook nhận Link Full ↗", fb_url, use_container_width=True)
+    st.link_button("👥 Tham gia Nhóm Facebook vietApps ↗", fb_url, use_container_width=True)
 
-with st.expander("🔑 Đã là thành viên nhóm? Bấm vào đây để lấy Link Full Kho Google Drive", expanded=False):
-    st.success("Cảm ơn bạn đã tham gia cộng đồng chia sẻ tri thức vietApps!")
-    st.link_button("☁️ Mở Kho Sách Google Drive Trọn Bộ (52 GB) ↗", main_drive_url, type="primary", use_container_width=True)
-    st.code(main_drive_url, language=None)
 
 
 # ==========================================

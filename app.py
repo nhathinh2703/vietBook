@@ -91,6 +91,37 @@ def load_config(xml_path="config.xml"):
                         "color": s.findtext("color", "#2563eb")
                     })
 
+        # Đọc cấu hình 12 khối lớp Google Drive
+        dl_node = root.find("driveLinks")
+        grade_items_map = {}
+        if dl_node is not None:
+            all_g = dl_node.find("allGrades")
+            if all_g is not None:
+                config["all_grades_title"] = all_g.get("title", "Trọn bộ sách giáo khoa điện tử (52 GB)")
+                config["all_grades_url"] = (all_g.get("url") or config["drive_link"]).strip()
+                config["all_grades_date"] = all_g.get("date", config["drive_date"]).strip()
+
+            for item in dl_node.findall(".//item"):
+                g_num = item.get("grade", "").strip()
+                if g_num:
+                    grade_items_map[g_num] = {
+                        "grade": g_num,
+                        "name": item.get("name", f"Lớp {g_num}"),
+                        "url": (item.get("url") or "").strip()
+                    }
+
+        config["grade_items"] = []
+        for i in range(1, 13):
+            str_i = str(i)
+            if str_i in grade_items_map:
+                config["grade_items"].append(grade_items_map[str_i])
+            else:
+                config["grade_items"].append({
+                    "grade": str_i,
+                    "name": f"Lớp {i}",
+                    "url": ""
+                })
+
     except Exception as e:
         print(f"Lỗi đọc config.xml: {e}")
 
@@ -537,58 +568,74 @@ with tab_drive:
     main_drive_url = CFG.get("drive_link", "#")
 
     render_html(f"""
-    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:28px; margin-bottom:24px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
             <div>
-                <span style="font-size:11px; font-weight:700; color:#0f766e; letter-spacing:0.08em; text-transform:uppercase;">THƯ VIỆN ĐIỆN TỬ DỰ PHÒNG</span>
-                <h2 style="margin:4px 0 8px; color:#0f172a; font-size:24px;">Kho sách Google Drive Trọn Bộ</h2>
-                <div style="font-size:14px; color:#64748b; line-height:1.5;">
-                    Toàn bộ file PDF sách giáo viên, sách giáo khoa và sách bài tập chuẩn bản gốc từ lớp 1 đến lớp 12 được phân loại sẵn.
+                <span style="font-size:11px; font-weight:700; color:#0f766e; letter-spacing:0.08em; text-transform:uppercase;">KHO GOOGLE DRIVE TRỰC TUYẾN</span>
+                <h3 style="margin:4px 0 6px; color:#0f172a; font-size:20px;">Bộ sách Thống nhất (Bộ GD&amp;ĐT)</h3>
+                <div style="font-size:13.5px; color:#64748b;">
+                    Tải nhanh sách giáo khoa, sách giáo viên và vở bài tập theo từng khối lớp từ Lớp 1 đến Lớp 12.
                 </div>
             </div>
-            <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px 18px; border-radius:12px; text-align:center;">
-                <div style="font-size:18px; font-weight:800; color:#15803d;">1.700+ đầu sách</div>
-                <div style="font-size:12px; color:#166534;">Dung lượng ~52 GB • Cập nhật {drive_date}</div>
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:8px 16px; border-radius:10px; text-align:center;">
+                <div style="font-size:16px; font-weight:800; color:#15803d;">Lớp 1 – 12</div>
+                <div style="font-size:11px; color:#166534;">Cập nhật {drive_date}</div>
             </div>
         </div>
     </div>
     """)
 
-    st.link_button("☁️ Mở Kho Sách Google Drive Đầy Đủ (52 GB) ↗", main_drive_url, type="primary", use_container_width=True)
-    st.code(main_drive_url, language=None)
+    # 12 KHỐI LỚP (LỚP 1 - LỚP 12)
+    grade_items = CFG.get("grade_items", [])
+    if not grade_items:
+        grade_items = [{"grade": str(i), "name": f"Lớp {i}", "url": ""} for i in range(1, 13)]
 
-    st.markdown("#### Danh mục thư mục theo cấp học")
-    col_g1, col_g2, col_g3 = st.columns(3, gap="medium")
+    g_cols = st.columns(4, gap="small")
+    for idx, item in enumerate(grade_items):
+        with g_cols[idx % 4]:
+            g_name = item.get("name", f"Lớp {idx+1}")
+            g_url = item.get("url", "").strip()
+            dest_url = g_url if g_url else main_drive_url
 
-    with col_g1:
-        st.markdown("""
-        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
-            <div style="font-size:24px; margin-bottom:8px;">🎒</div>
-            <div style="font-weight:700; font-size:16px; color:#0f172a;">Khối Tiểu Học</div>
-            <div style="font-size:13px; color:#64748b; margin-top:4px;">Lớp 1, Lớp 2, Lớp 3, Lớp 4, Lớp 5</div>
-            <div style="font-size:12px; color:#059669; margin-top:8px; font-weight:600;">Đầy đủ SGK, SGV, VBT</div>
+            st.markdown(f"""
+            <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                    <div style="font-weight:700; font-size:14px; color:#0f172a;">📘 {g_name}</div>
+                    <div style="font-size:11px; color:#64748b;">SGK, SGV &amp; VBT</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.link_button(f"Tải {g_name} ↗", dest_url, use_container_width=True)
+
+    # KHU VỰC THAM GIA CỘNG ĐỒNG ĐỂ NHẬN LINK FULL
+    zalo_url = next((s["url"] for s in CFG.get("socials", []) if "zalo" in s.get("id", "").lower() or "zalo" in s.get("name", "").lower()), "https://zalo.me/g/lapbvhp0mku5bvgle0a1")
+    fb_url = next((s["url"] for s in CFG.get("socials", []) if "group" in s.get("id", "").lower() or "facebook_group" in s.get("id", "").lower()), "https://www.facebook.com/groups/1143352114790841")
+
+    render_html(f"""
+    <div style="background:linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%); border:1px solid #ccfbf1; border-radius:14px; padding:22px; margin-top:24px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <span style="font-size:22px;">🔒</span>
+            <div style="font-size:17px; font-weight:800; color:#0f766e;">
+                Kho sách Trọn bộ Toàn diện (52 GB • 1.700+ đầu sách)
+            </div>
         </div>
-        """, unsafe_allow_html=True)
-
-    with col_g2:
-        st.markdown("""
-        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
-            <div style="font-size:24px; margin-bottom:8px;">🏫</div>
-            <div style="font-weight:700; font-size:16px; color:#0f172a;">Khối THCS</div>
-            <div style="font-size:13px; color:#64748b; margin-top:4px;">Lớp 6, Lớp 7, Lớp 8, Lớp 9</div>
-            <div style="font-size:12px; color:#059669; margin-top:8px; font-weight:600;">Đầy đủ SGK, SGV, SBT</div>
+        <div style="font-size:13.5px; color:#475569; line-height:1.6; margin-bottom:16px;">
+            Bao gồm đầy đủ tất cả các bộ sách (Cánh Diều, Kết Nối Tri Thức, Chân Trời Sáng Tạo,...), tài liệu tập huấn và chuyên đề 12 khối lớp.<br>
+            👉 <strong>Để nhận liên kết mở Full Kho sách:</strong> Thầy cô và các bạn vui lòng tham gia nhóm Zalo hoặc Cộng đồng Facebook vietApps để lấy link ghim miễn phí.
         </div>
-        """, unsafe_allow_html=True)
+    </div>
+    """)
 
-    with col_g3:
-        st.markdown("""
-        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
-            <div style="font-size:24px; margin-bottom:8px;">🎓</div>
-            <div style="font-weight:700; font-size:16px; color:#0f172a;">Khối THPT</div>
-            <div style="font-size:13px; color:#64748b; margin-top:4px;">Lớp 10, Lớp 11, Lớp 12</div>
-            <div style="font-size:12px; color:#059669; margin-top:8px; font-weight:600;">Đầy đủ Chuyên đề &amp; Bài tập</div>
-        </div>
-        """, unsafe_allow_html=True)
+    col_btn1, col_btn2 = st.columns(2, gap="small")
+    with col_btn1:
+        st.link_button("💬 Tham gia Nhóm Zalo nhận Link Full ↗", zalo_url, type="primary", use_container_width=True)
+    with col_btn2:
+        st.link_button("👥 Tham gia Nhóm Facebook nhận Link Full ↗", fb_url, use_container_width=True)
+
+    with st.expander("🔑 Đã là thành viên nhóm? Bấm vào đây để lấy Link Full Kho Google Drive", expanded=False):
+        st.success("Cảm ơn bạn đã tham gia cộng đồng chia sẻ tri thức vietApps!")
+        st.link_button("☁️ Mở Kho Sách Google Drive Trọn Bộ (52 GB) ↗", main_drive_url, type="primary", use_container_width=True)
+        st.code(main_drive_url, language=None)
 
 
 # ==========================================

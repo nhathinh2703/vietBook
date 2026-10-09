@@ -48,6 +48,7 @@ def load_config(xml_path="config.xml"):
     def default_grades():
         return [{"grade": str(i), "name": f"Lớp {i}", "url": ""} for i in range(1, 13)]
 
+    xml_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), xml_path)
     if not os.path.exists(xml_path):
         config["grade_items"] = default_grades()
         return config

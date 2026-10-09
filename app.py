@@ -181,25 +181,45 @@ html, body, [class*="css"], .stApp {
 /* ── Hero ── */
 .vb-hero {
     background: linear-gradient(135deg, #0f766e 0%, #0d9488 55%, #14b8a6 100%);
-    border-radius: 20px; padding: 32px 30px; color: #fff; margin-bottom: 22px;
+    border-radius: 16px; padding: 24px 30px; color: #fff; margin-bottom: 22px;
     position: relative; overflow: hidden;
-    box-shadow: 0 10px 30px rgba(15,118,110,.22);
+    box-shadow: 0 8px 24px rgba(15,118,110,.2);
+    display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
 }
+.vb-hero-content { flex: 1; min-width: 280px; }
 .vb-hero::after {
-    content: ""; position: absolute; right: -60px; top: -60px; width: 220px; height: 220px;
+    content: ""; position: absolute; right: -40px; top: -40px; width: 160px; height: 160px;
     border-radius: 50%; background: rgba(255,255,255,.1);
 }
 .vb-hero h1 {
-    margin: 0 0 8px; font-size: 28px; font-weight: 800; letter-spacing: -.02em;
+    margin: 0 0 6px; font-size: 22px; font-weight: 800; letter-spacing: -.02em;
     color: #fff !important; padding: 0;
 }
-.vb-hero p { margin: 0; font-size: 15px; line-height: 1.6; color: rgba(255,255,255,.88); max-width: 560px; }
-.vb-stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.vb-hero p { margin: 0; font-size: 14px; line-height: 1.5; color: rgba(255,255,255,.88); max-width: 500px; }
+.vb-stats { display: flex; gap: 8px; flex-direction: column; align-items: flex-end; }
 .vb-stat {
     background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.25);
-    border-radius: 12px; padding: 8px 14px; font-size: 13px;
+    border-radius: 8px; padding: 6px 12px; font-size: 12px; min-width: 140px;
 }
 .vb-stat b { font-weight: 700; }
+@media (max-width: 640px) {
+    .vb-stats { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
+    .vb-stat { min-width: auto; }
+}
+
+/* ── Grade Buttons ── */
+.vb-grade-row {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.vb-grade-btn {
+    flex: 1; min-width: 65px; text-align: center; background: #fff;
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 4px;
+    font-size: 13px; font-weight: 600; color: var(--ink) !important; text-decoration: none !important;
+    transition: all .15s;
+}
+.vb-grade-btn:hover {
+    border-color: var(--brand); color: var(--brand) !important; box-shadow: 0 2px 6px rgba(15,118,110,.1);
+}
 
 /* ── Tabs dạng pill ── */
 .stTabs [data-baseweb="tab-list"] {
@@ -346,8 +366,10 @@ render_html(f"""
 </div>
 
 <div class="vb-hero">
-    <h1>Sách giáo khoa bản gốc, tải về trong vài giây</h1>
-    <p>Tải sách chất lượng cao từ taphuan.nxbgd.vn hoặc lấy trọn bộ sách giáo khoa, sách giáo viên, sách bài tập trên Google Drive.</p>
+    <div class="vb-hero-content">
+        <h1>Sách giáo khoa bản gốc, tải về trong vài giây</h1>
+        <p>Tải sách chất lượng cao từ taphuan.nxbgd.vn hoặc lấy trọn bộ sách giáo khoa, sách giáo viên, sách bài tập trên Google Drive.</p>
+    </div>
     <div class="vb-stats">
         <div class="vb-stat">📦 <b>52 GB</b> dữ liệu</div>
         <div class="vb-stat">📚 <b>1.700+</b> đầu sách</div>
@@ -356,12 +378,10 @@ render_html(f"""
 </div>
 """)
 
-tab_dl, tab_drive = st.tabs(["🔗  Tải sách từ link", "☁️  Kho Google Drive"])
-
 # ==========================================
-# 5. TAB 1 – TẢI SÁCH TỪ LINK
+# 5. TẢI SÁCH TỪ LINK
 # ==========================================
-with tab_dl:
+if True:
     render_html("""
     <div class="vb-card">
         <div class="vb-eyebrow">Công cụ tải sách</div>
@@ -385,8 +405,6 @@ with tab_dl:
         )
     with col_btn:
         analyze_btn = st.button("Tải sách", type="primary", use_container_width=True)
-
-    st.caption(f"💡 Thử nhanh với [SGK Tin học 12 (Định hướng ứng dụng)]({EXAMPLE_URL})")
 
     if analyze_btn or (user_url and user_url != st.session_state.get("last_analyzed_url")):
         st.session_state["current_url_input"] = user_url
@@ -499,9 +517,9 @@ with tab_dl:
                     st.rerun()
 
 # ==========================================
-# 6. TAB 2 – KHO GOOGLE DRIVE
+# 6. KHO GOOGLE DRIVE
 # ==========================================
-with tab_drive:
+if True:
     render_html(f"""
     <div class="vb-card">
         <div class="vb-eyebrow">Kho Google Drive</div>
@@ -519,14 +537,14 @@ with tab_drive:
     st.markdown("<div class='vb-section-title'>Hoặc chọn theo khối lớp</div>", unsafe_allow_html=True)
 
     grades = CFG["grade_items"]
-    for row in range(0, 12, 4):
-        cols = st.columns(4, gap="small")
-        for col, g in zip(cols, grades[row:row + 4]):
-            with col:
-                if g["url"]:
-                    st.link_button(g["name"], g["url"], use_container_width=True)
-                else:
-                    st.button(g["name"], key=f"grade_{g['grade']}", disabled=True, use_container_width=True)
+    grade_html = '<div class="vb-grade-row">'
+    for g in grades:
+        if g["url"]:
+            grade_html += f'<a class="vb-grade-btn" href="{h(g["url"])}" target="_blank" rel="noopener noreferrer">{h(g["name"])}</a>'
+        else:
+            grade_html += f'<a class="vb-grade-btn" style="opacity:0.5; pointer-events:none;" title="Chưa cập nhật">{h(g["name"])}</a>'
+    grade_html += '</div>'
+    render_html(grade_html)
 
     if not any(g["url"] for g in grades):
         st.caption("Các thư mục theo lớp sẽ hiển thị khi được cấu hình trong config.xml (mục driveLinks).")

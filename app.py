@@ -315,7 +315,10 @@ div[data-testid="stHorizontalBlock"] { align-items: center !important; }
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
     background: rgba(255,255,255,.94); backdrop-filter: blur(10px);
     border-top: 1px solid var(--line); box-shadow: 0 -1px 8px rgba(15,23,42,.05);
-    padding: 8px 1.5rem; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+}
+.vb-footer-inner {
+    max-width: 1200px; margin: 0 auto; padding: 8px 1.5rem;
+    display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
 }
 .vb-row1 { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .vb-icons { display: flex; gap: 8px; align-items: center; }
@@ -384,8 +387,8 @@ if True:
     render_html("""
     <div class="vb-card">
         <div class="vb-eyebrow">Công cụ tải sách</div>
-        <h3>Dán link để tải PDF bản gốc NXB Giáo dục</h3>
-        <div class="sub">Hỗ trợ link đọc sách và link môn học từ taphuan.nxbgd.vn.</div>
+        <h3 style="display:inline-block; margin:0 8px 12px 0;">Dán link để tải PDF bản gốc NXB Giáo dục</h3>
+        <span class="sub" style="display:inline-block;">Hỗ trợ link đọc sách và môn học từ <a href="https://taphuan.nxbgd.vn" target="_blank" style="color:var(--brand); text-decoration:none; font-weight:600;">taphuan.nxbgd.vn</a></span>
         <div class="vb-steps">
             <div class="vb-step"><b>1. Dán link</b>Sao chép đường dẫn trang đọc sách.</div>
             <div class="vb-step"><b>2. Kiểm tra</b>Hệ thống đọc thông tin và số trang.</div>
@@ -523,15 +526,13 @@ if True:
     <div class="vb-card">
         <div class="vb-eyebrow">Kho Google Drive</div>
         <h3>Trọn bộ sách bản gốc chất lượng cao</h3>
-        <div class="sub">
+        <div class="sub" style="margin-bottom:16px;">
             Sách giáo khoa, sách giáo viên và sách bài tập từ lớp 1 đến lớp 12.
             Tốc độ cao, không quảng cáo, cập nhật liên tục (lần cuối {h(CFG['drive_date'])}).
         </div>
+        <a href="{h(CFG['drive_link'])}" target="_blank" style="display:flex; align-items:center; justify-content:center; background:var(--brand); color:#fff; border-radius:12px; height:46px; font-weight:600; text-decoration:none; transition:all 0.15s; width:100%;">☁️ Mở kho sách trọn bộ (52 GB) ↗</a>
     </div>
     """)
-
-    st.link_button("☁️  Mở kho sách trọn bộ (52 GB) ↗", CFG["drive_link"],
-                   type="primary", use_container_width=True)
 
     st.markdown("<div class='vb-section-title' style='text-align:center;'>Hoặc chọn theo khối lớp</div>", unsafe_allow_html=True)
 
@@ -588,6 +589,7 @@ ICON_SVG = {
     "facebook": '<svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>',
     "youtube": '<svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>',
     "telegram": '<svg viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>',
+    "tiktok": '<svg viewBox="0 0 448 512"><path d="M448 209.91a210.06 210.06 0 0 1-122.77-39.25V349.38A162.55 162.55 0 1 1 185 188.31V278.2a74.62 74.62 0 1 0 52.23 71.18V0l88 0a121.18 121.18 0 0 0 1.86 22.17h0A122.18 122.18 0 0 0 381 102.39a121.43 121.43 0 0 0 67 20.14Z"/></svg>',
     "link": '<svg viewBox="0 0 24 24"><path d="M10.6 13.4a1 1 0 0 1 0-1.4l3-3a3 3 0 1 1 4.2 4.2l-2 2a1 1 0 1 1-1.4-1.4l2-2a1 1 0 0 0-1.4-1.4l-3 3a1 1 0 0 1-1.4 0zm2.8-2.8a1 1 0 0 1 0 1.4l-3 3a3 3 0 1 1-4.2-4.2l2-2a1 1 0 0 1 1.4 1.4l-2 2a1 1 0 0 0 1.4 1.4l3-3a1 1 0 0 1 1.4 0z"/></svg>',
 }
 
@@ -602,6 +604,8 @@ def social_icon(s):
         inner = ICON_SVG["youtube"]
     elif "telegram" in key:
         inner = ICON_SVG["telegram"]
+    elif "tiktok" in key:
+        inner = ICON_SVG["tiktok"]
     else:
         inner = ICON_SVG["link"]
     label = s.get("title") or s.get("name") or "Liên kết"
@@ -617,12 +621,14 @@ eco = " · ".join(
 
 render_html(f"""
 <div class="vb-footer">
-    <div class="vb-row1">
-        <div class="vb-icons">{icons}</div>
-        {f'<div class="vb-eco">Hệ sinh thái: {eco}</div>' if eco else ''}
-    </div>
-    <div class="vb-copy">
-        {h(CFG['copyright'])} • <a href="mailto:{h(CFG['support_email'])}">{h(CFG['support_email'])}</a>
+    <div class="vb-footer-inner">
+        <div class="vb-row1">
+            <div class="vb-icons">{{icons}}</div>
+            {{f'<div class="vb-eco">Hệ sinh thái: {{eco}}</div>' if eco else ''}}
+        </div>
+        <div class="vb-copy">
+            {{h(CFG['copyright'])}} • <a href="mailto:{{h(CFG['support_email'])}}">{{h(CFG['support_email'])}}</a>
+        </div>
     </div>
 </div>
 """)

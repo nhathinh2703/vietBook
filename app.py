@@ -196,20 +196,19 @@ html, body, [class*="css"], .stApp {
     color: #fff !important; padding: 0;
 }
 .vb-hero p { margin: 0; font-size: 14px; line-height: 1.5; color: rgba(255,255,255,.88); max-width: 500px; }
-.vb-stats { display: flex; gap: 8px; flex-direction: column; align-items: flex-end; }
+.vb-stats { display: flex; gap: 10px; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
 .vb-stat {
     background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.25);
-    border-radius: 8px; padding: 6px 12px; font-size: 12px; min-width: 140px;
+    border-radius: 8px; padding: 6px 12px; font-size: 13px;
 }
 .vb-stat b { font-weight: 700; }
 @media (max-width: 640px) {
-    .vb-stats { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
-    .vb-stat { min-width: auto; }
+    .vb-stats { justify-content: flex-start; }
 }
 
 /* ── Grade Buttons ── */
 .vb-grade-row {
-    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; justify-content: center;
 }
 .vb-grade-btn {
     flex: 1; min-width: 65px; text-align: center; background: #fff;
@@ -274,15 +273,16 @@ html, body, [class*="css"], .stApp {
 /* ── Input & nút ── */
 div[data-testid="stHorizontalBlock"] { align-items: center !important; }
 .stTextInput > div > div {
-    border-radius: 12px !important; border: 1px solid #cbd5e1 !important; background: #fff !important;
+    height: 46px !important; border-radius: 12px !important; border: 1px solid #cbd5e1 !important; background: #fff !important;
 }
-.stTextInput input { height: 46px !important; font-size: 15px !important; }
+.stTextInput input { height: 44px !important; font-size: 15px !important; }
 .stTextInput > div > div:focus-within {
     border-color: var(--brand) !important; box-shadow: 0 0 0 3px rgba(13,148,136,.15) !important;
 }
 .stButton > button, .stDownloadButton > button, .stLinkButton > a {
-    min-height: 46px !important; border-radius: 12px !important;
+    height: 46px !important; min-height: 46px !important; border-radius: 12px !important;
     font-weight: 600 !important; font-size: 15px !important; transition: all .15s ease;
+    display: inline-flex; align-items: center; justify-content: center;
 }
 .stButton > button[kind="primary"], .stDownloadButton > button[kind="primary"],
 .stLinkButton > a[kind="primary"] {
@@ -315,10 +315,9 @@ div[data-testid="stHorizontalBlock"] { align-items: center !important; }
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
     background: rgba(255,255,255,.94); backdrop-filter: blur(10px);
     border-top: 1px solid var(--line); box-shadow: 0 -1px 8px rgba(15,23,42,.05);
-    padding: 10px 1rem 8px; text-align: center;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 8px 1.5rem; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
 }
-.vb-row1 { display: flex; align-items: center; justify-content: center; gap: 18px; flex-wrap: wrap; }
+.vb-row1 { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .vb-icons { display: flex; gap: 8px; align-items: center; }
 .vb-icon {
     width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
@@ -534,7 +533,7 @@ if True:
     st.link_button("☁️  Mở kho sách trọn bộ (52 GB) ↗", CFG["drive_link"],
                    type="primary", use_container_width=True)
 
-    st.markdown("<div class='vb-section-title'>Hoặc chọn theo khối lớp</div>", unsafe_allow_html=True)
+    st.markdown("<div class='vb-section-title' style='text-align:center;'>Hoặc chọn theo khối lớp</div>", unsafe_allow_html=True)
 
     grades = CFG["grade_items"]
     grade_html = '<div class="vb-grade-row">'
@@ -545,9 +544,6 @@ if True:
             grade_html += f'<a class="vb-grade-btn" style="opacity:0.5; pointer-events:none;" title="Chưa cập nhật">{h(g["name"])}</a>'
     grade_html += '</div>'
     render_html(grade_html)
-
-    if not any(g["url"] for g in grades):
-        st.caption("Các thư mục theo lớp sẽ hiển thị khi được cấu hình trong config.xml (mục driveLinks).")
 
 # ==========================================
 # 7. QUẢN TRỊ (nếu có mật khẩu)

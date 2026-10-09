@@ -626,7 +626,10 @@ render_html(f"""
 <div class="vb-footer">
     <div class="vb-footer-inner">
         <div class="vb-row1">
-            <div class="vb-icons">{icons}</div>
+            <div class="vb-icons">
+                <span style="font-size:14px; color:var(--muted); font-weight:500; margin-right:4px;">Kết nối với chúng tôi:</span>
+                {icons}
+            </div>
             {f'<div class="vb-eco">Hệ sinh thái: {eco}</div>' if eco else ''}
         </div>
         <div class="vb-copy">

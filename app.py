@@ -244,7 +244,7 @@ html, body, [class*="css"], .stApp {
 .vb-card-desc { font-size: 14px; color: #64748b; line-height: 1.55; }
 .vb-badge-card {
     font-size: 11px; font-weight: 700; color: #047857; background: #d1fae5;
-    padding: 3px 10px; border-radius: 999px; margin-left: 8px; vertical-align: text-bottom;
+    padding: 3px 10px; border-radius: 999px;
 }
 
 /* ── Kết quả sách ── */
@@ -387,16 +387,11 @@ render_html(f"""
 with st.container(border=True):
     render_html("""
     <div style="margin-bottom: 24px;">
-        <h3 class="vb-card-title">
-            Dán link để tải PDF bản gốc NXB Giáo dục
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
+            <h3 class="vb-card-title" style="margin:0;">Dán link để tải PDF bản gốc NXB Giáo dục</h3>
             <span class="vb-badge-card">Công cụ tải sách</span>
-        </h3>
-        <div class="vb-card-desc">Hỗ trợ link đọc sách và môn học từ <a href="https://taphuan.nxbgd.vn" target="_blank" style="color:var(--brand); text-decoration:none; font-weight:600;">taphuan.nxbgd.vn</a></div>
-        <div class="vb-steps">
-            <div class="vb-step"><b>1. Dán link</b>Sao chép đường dẫn trang đọc sách.</div>
-            <div class="vb-step"><b>2. Kiểm tra</b>Hệ thống đọc thông tin và số trang.</div>
-            <div class="vb-step"><b>3. Tải PDF</b>Ghép các trang gốc thành một file PDF.</div>
         </div>
+        <div class="vb-card-desc">Hỗ trợ link đọc sách và môn học từ <a href="https://taphuan.nxbgd.vn" target="_blank" style="color:var(--brand); text-decoration:none; font-weight:600;">taphuan.nxbgd.vn</a></div>
     </div>
     """)
 
@@ -527,14 +522,15 @@ elif res and res["type"] == "chi_tiet_sach":
 with st.container(border=True):
     render_html(f"""
     <div style="margin-bottom: 24px;">
-        <h3 class="vb-card-title">
-            Trọn bộ sách bản gốc chất lượng cao
-            <span class="vb-badge-card">Kho Google Drive</span>
-            <span style="display:inline-block; font-size:11px; font-weight:700; color:#059669; background:#d1fae5; padding:3px 10px; border-radius:999px; margin-left:4px; vertical-align:text-bottom;">Cập nhật {h(CFG['drive_date'])}</span>
-        </h3>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
+            <h3 class="vb-card-title" style="margin:0;">Trọn bộ sách bản gốc chất lượng cao</h3>
+            <div style="display:flex; gap:6px;">
+                <span class="vb-badge-card">Kho Google Drive</span>
+                <span style="display:inline-block; font-size:11px; font-weight:700; color:#059669; background:#d1fae5; padding:3px 10px; border-radius:999px;">Cập nhật {h(CFG['drive_date'])}</span>
+            </div>
+        </div>
         <div class="vb-card-desc">
-            Sách giáo khoa, sách giáo viên và sách bài tập từ lớp 1 đến lớp 12.
-            Tốc độ cao, không quảng cáo.
+            Sách giáo khoa, sách giáo viên và sách bài tập từ lớp 1 đến lớp 12 của Bộ Giáo dục và Đào tạo (Nhà xuất bản Giáo dục). Tốc độ cao, không quảng cáo.
         </div>
     </div>
     <a href="{h(CFG['drive_link'])}" target="_blank" style="display:flex; align-items:center; justify-content:center; background:var(--brand); color:#fff; border-radius:12px; height:46px; font-weight:600; text-decoration:none; transition:all 0.15s; width:100%; margin-bottom: 24px;">☁️ Mở kho sách trọn bộ (52 GB) ↗</a>

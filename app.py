@@ -394,34 +394,23 @@ tab_download, tab_drive = st.tabs([
 with tab_download:
     EXAMPLE_URL = "https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-tin-hoc-12-dinh-huong-tin-hoc-ung-dung.4719365396#page=0"
 
-    render_html(f"""
-    <div class="search-row-container">
-        <div style="font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
-            Nhập link sách từ NXB Giáo Dục
-        </div>
-        <div style="font-size: 14px; color: #64748b; margin-bottom: 16px;">
-            Dán đường dẫn đọc sách hoặc môn học từ <strong>taphuan.nxbgd.vn</strong> để tự động bóc tách trang ảnh gốc và lưu thành file PDF.
-        </div>
-        <div style="font-size: 13px; color: #64748b; margin-bottom: 14px; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px dashed #cbd5e1;">
-            Link mẫu trải nghiệm: <a href="{EXAMPLE_URL}" target="_blank" style="color: #0f766e; font-weight: 600; text-decoration: none;">SGK Tin học 12 (Định hướng ứng dụng) ↗</a>
-        </div>
-    </div>
-    """)
-
+    st.markdown("##### 🔗 Dán link đọc sách hoặc môn học từ taphuan.nxbgd.vn:")
     col_inp, col_btn = st.columns([4.2, 1.2], gap="small")
 
     with col_inp:
         user_url = st.text_input(
             "Nhập link taphuan.nxbgd.vn:",
             value=st.session_state["current_url_input"],
-            placeholder="Dán link taphuan.nxbgd.vn vào đây...",
+            placeholder="Ví dụ: https://taphuan.nxbgd.vn/tap-huan/doc-sach/...",
             label_visibility="collapsed"
         )
 
     with col_btn:
-        analyze_btn = st.button("Phân tích link", type="primary", use_container_width=True)
+        analyze_btn = st.button("Tải sách", type="primary", use_container_width=True)
 
-    # Xử lý khi nhấn Phân tích
+    st.caption(f"💡 Link mẫu dùng thử: [SGK Tin học 12 (Định hướng ứng dụng)]({EXAMPLE_URL})")
+
+    # Xử lý khi nhấn Tải sách hoặc URL thay đổi
     if analyze_btn or (user_url and user_url != st.session_state.get("last_analyzed_url")):
         st.session_state["current_url_input"] = user_url
         st.session_state["last_analyzed_url"] = user_url
@@ -431,27 +420,23 @@ with tab_download:
             st.error(parsed["message"])
             st.session_state["analyzed_data"] = None
         else:
-            with st.status("Đang kết nối & đọc dữ liệu từ NXBGD...", expanded=False) as status_box:
+            with st.spinner("Đang lấy thông tin sách..."):
                 if parsed["type"] == "doc_sach":
                     info, err = downloader.fetch_reader_info(parsed["url"])
                     if err:
-                        status_box.update(label="Không thể tải thông tin sách", state="error")
                         st.error(err)
                         st.session_state["analyzed_data"] = None
                     else:
                         st.session_state["analyzed_data"] = {"type": "doc_sach", "data": info}
-                        status_box.update(label="Đã tìm thấy sách thành công", state="complete")
                 elif parsed["type"] == "chi_tiet_sach":
                     info, err = downloader.fetch_detail_editions(parsed["url"])
                     if err:
-                        status_box.update(label="Không thể tải danh sách ấn bản", state="error")
                         st.error(err)
                         st.session_state["analyzed_data"] = None
                     else:
                         st.session_state["analyzed_data"] = {"type": "chi_tiet_sach", "data": info}
-                        status_box.update(label="Đã tải danh sách ấn bản thành công", state="complete")
 
-    # HIỂN THỊ KẾT QUẢ
+    # HIỂN THỊ KẾT QUẢ TỐI GIẢN & NHANH
     if st.session_state.get("analyzed_data"):
         res = st.session_state["analyzed_data"]
 
@@ -461,111 +446,87 @@ with tab_download:
             title = book["title"]
             page_urls = book["page_urls"]
             total_pages = book["total_pages"]
-            preview_url = book["preview_url"]
-            doc_url = book["doc_url"]
 
             offline_path, offline_sz = downloader.find_offline_pdf(title, CFG.get("storage_dir"))
 
-            st.markdown('<div class="vb-card-result">', unsafe_allow_html=True)
-            col_cov, col_det = st.columns([1, 3.5], gap="medium")
+            st.markdown(f"""
+            <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px 20px; margin: 16px 0;">
+                <div style="font-size:16px; font-weight:700; color:#0f172a;">📖 {title}</div>
+                <div style="font-size:13px; color:#64748b; margin-top:4px;">Tổng số: <strong>{total_pages} trang</strong> • Bản gốc NXB Giáo Dục</div>
+            </div>
+            """, unsafe_allow_html=True)
 
-            with col_cov:
-                if preview_url:
-                    st.image(preview_url, use_container_width=True)
-                else:
-                    st.markdown("<div style='text-align:center;font-size:42px;padding:30px;background:#f8fafc;border-radius:12px;'>📖</div>", unsafe_allow_html=True)
+            if offline_path and os.path.exists(offline_path):
+                try:
+                    with open(offline_path, "rb") as f:
+                        file_data = f.read()
+                    st.download_button(
+                        label=f"💾 Tải ngay PDF có sẵn ({offline_sz:.1f} MB)",
+                        data=file_data,
+                        file_name=os.path.basename(offline_path),
+                        mime="application/pdf",
+                        type="primary",
+                        use_container_width=True
+                    )
+                except Exception as e:
+                    st.error(f"Lỗi đọc file: {e}")
+            else:
+                if st.button(f"📥 Bắt đầu tải PDF ({total_pages} trang)", type="primary", use_container_width=True):
+                    p_bar = st.progress(0)
+                    p_label = st.empty()
 
-            with col_det:
-                st.markdown(f"<h3 style='margin-top:0; color:#0f172a;'>{title}</h3>", unsafe_allow_html=True)
-                st.caption(f"📄 Tổng số: **{total_pages} trang**  •  📚 Bản gốc NXB Giáo Dục")
-                st.markdown("**Đường dẫn sách đang mở:**")
-                st.code(doc_url, language=None)
+                    def progress_cb(current, total, msg):
+                        pct = int((current / total) * 100) if total else 0
+                        p_bar.progress(pct)
+                        p_label.text(f"{msg} ({current}/{total})")
 
-                if offline_path and os.path.exists(offline_path):
-                    st.success(f"File PDF đã có sẵn trong kho lưu trữ ({offline_sz:.1f} MB)")
-                    try:
-                        with open(offline_path, "rb") as f:
-                            file_data = f.read()
+                    target_save = None
+                    if CFG.get("storage_dir") and os.path.exists(CFG.get("storage_dir")):
+                        target_save = os.path.join(CFG.get("storage_dir"), downloader.sanitize_filename(title) + ".pdf")
+
+                    with st.spinner("Đang tải các trang ảnh gốc..."):
+                        pdf_bytes, sz_mb, dl_err = downloader.download_pages_and_build_pdf(
+                            page_urls=page_urls, title=title, progress_callback=progress_cb, save_path=target_save, max_workers=8
+                        )
+
+                    if dl_err:
+                        st.error(dl_err)
+                    else:
+                        p_bar.progress(100)
+                        p_label.text(f"✅ Hoàn tất ({sz_mb:.1f} MB)")
                         st.download_button(
-                            label=f"📥 Tải PDF có sẵn ({offline_sz:.1f} MB)",
-                            data=file_data,
-                            file_name=os.path.basename(offline_path),
+                            label=f"💾 Lưu file PDF về máy ({sz_mb:.1f} MB)",
+                            data=pdf_bytes,
+                            file_name=f"{downloader.sanitize_filename(title)}.pdf",
                             mime="application/pdf",
                             type="primary",
                             use_container_width=True
                         )
-                    except Exception as e:
-                        st.error(f"Lỗi đọc file từ máy: {e}")
-                else:
-                    if st.button(f"📥 Bắt đầu tải & đóng gói PDF ({total_pages} trang)", type="primary", use_container_width=True):
-                        p_bar = st.progress(0)
-                        p_label = st.empty()
-
-                        def progress_cb(current, total, msg):
-                            pct = int((current / total) * 100) if total else 0
-                            p_bar.progress(pct)
-                            p_label.text(f"{msg} ({current}/{total})")
-
-                        target_save = None
-                        if CFG.get("storage_dir") and os.path.exists(CFG.get("storage_dir")):
-                            target_save = os.path.join(CFG.get("storage_dir"), downloader.sanitize_filename(title) + ".pdf")
-
-                        with st.spinner("Đang tải các trang ảnh gốc độ phân giải cao..."):
-                            pdf_bytes, sz_mb, dl_err = downloader.download_pages_and_build_pdf(
-                                page_urls=page_urls, title=title, progress_callback=progress_cb, save_path=target_save, max_workers=8
-                            )
-
-                        if dl_err:
-                            st.error(dl_err)
-                        else:
-                            p_bar.progress(100)
-                            p_label.text(f"✅ Hoàn tất đóng gói! Kích thước file: {sz_mb:.1f} MB.")
-                            st.download_button(
-                                label=f"💾 Lưu file PDF về máy ({sz_mb:.1f} MB)",
-                                data=pdf_bytes,
-                                file_name=f"{downloader.sanitize_filename(title)}.pdf",
-                                mime="application/pdf",
-                                type="primary",
-                                use_container_width=True
-                            )
-
-            st.markdown('</div>', unsafe_allow_html=True)
 
         # 2. TRƯỜNG HỢP: MÔN HỌC NHIỀU ẤN BẢN (chi_tiet_sach)
         elif res["type"] == "chi_tiet_sach":
             detail = res["data"]
-            st.markdown('<div class="vb-card-result">', unsafe_allow_html=True)
-            st.markdown(f"<h3 style='margin-top:0;'>📚 {detail['main_title']}</h3>", unsafe_allow_html=True)
-            st.caption(f"Tìm thấy {len(detail['editions'])} ấn bản (Sách giáo viên, Sách giáo khoa, Vở bài tập). Nhấp chọn ấn bản bên dưới để tải.")
+            st.markdown(f"##### 📚 {detail['main_title']} ({len(detail['editions'])} ấn bản)")
+            st.caption("Chọn ấn bản bạn muốn tải:")
 
-            cols_ed = st.columns(min(len(detail['editions']), 3) if detail['editions'] else 1)
-            for i, ed in enumerate(detail['editions']):
-                with cols_ed[i % len(cols_ed)]:
-                    off_path, off_sz = downloader.find_offline_pdf(ed["title"], CFG.get("storage_dir"))
-                    status_badge = f"<span style='color:#059669; font-size:11px; font-weight:700;'>Có sẵn ({off_sz:.1f} MB)</span>" if off_path else ""
+            for i, ed in enumerate(detail["editions"]):
+                off_path, off_sz = downloader.find_offline_pdf(ed["title"], CFG.get("storage_dir"))
+                status_txt = f" • Có sẵn ({off_sz:.1f} MB)" if off_path else ""
 
+                col_name, col_action = st.columns([4.2, 1.2], gap="small")
+                with col_name:
                     st.markdown(f"""
-                    <div class="vb-edition-card">
-                        <div>
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                                <span style="background:{ed['badge_color']}; color:#fff; font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px;">
-                                    {ed['type_label']}
-                                </span>
-                                {status_badge}
-                            </div>
-                            <div style="font-size:14px; font-weight:700; line-height:1.4; color:#0f172a; margin-bottom:12px;">
-                                {ed['title']}
-                            </div>
-                        </div>
+                    <div style="padding:10px 14px; background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; display:flex; align-items:center; gap:10px; min-height:48px;">
+                        <span style="background:{ed['badge_color']}; color:#fff; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; white-space:nowrap;">{ed['type_label']}</span>
+                        <span style="font-weight:600; font-size:14px; color:#1e293b;">{ed['title']}</span>
+                        <span style="font-size:12px; color:#059669; font-weight:600; white-space:nowrap;">{status_txt}</span>
                     </div>
                     """, unsafe_allow_html=True)
-
-                    if st.button("Mở tải sách này", key=f"sel_ed_{i}", use_container_width=True):
+                with col_action:
+                    if st.button("Chọn tải", key=f"sel_ed_{i}", use_container_width=True):
                         st.session_state["current_url_input"] = ed["doc_url"]
-                        st.session_state["last_analyzed_url"] = "" # ép phân tích lại
+                        st.session_state["last_analyzed_url"] = ""
                         st.rerun()
-
-            st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ------------------------------------------

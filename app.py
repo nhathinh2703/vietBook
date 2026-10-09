@@ -235,9 +235,10 @@ html, body, [class*="css"], .stApp {
 .stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] { display: none; }
 
 /* ── Card ── */
-.vb-card {
-    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-    padding: 22px 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(15,23,42,.04);
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: var(--card) !important; border: 1px solid var(--line) !important; 
+    border-radius: var(--radius) !important; padding: 22px 24px !important; 
+    margin-bottom: 16px !important; box-shadow: 0 1px 3px rgba(15,23,42,.04) !important;
 }
 .vb-eyebrow {
     font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
@@ -383,9 +384,9 @@ render_html(f"""
 # ==========================================
 # 5. TẢI SÁCH TỪ LINK
 # ==========================================
-if True:
+with st.container(border=True):
     render_html("""
-    <div class="vb-card">
+    <div>
         <div class="vb-eyebrow">Công cụ tải sách</div>
         <h3 style="display:inline-block; margin:0 8px 12px 0;">Dán link để tải PDF bản gốc NXB Giáo dục</h3>
         <span class="sub" style="display:inline-block;">Hỗ trợ link đọc sách và môn học từ <a href="https://taphuan.nxbgd.vn" target="_blank" style="color:var(--brand); text-decoration:none; font-weight:600;">taphuan.nxbgd.vn</a></span>
@@ -408,122 +409,122 @@ if True:
     with col_btn:
         analyze_btn = st.button("Tải sách", type="primary", use_container_width=True)
 
-    if analyze_btn or (user_url and user_url != st.session_state.get("last_analyzed_url")):
-        st.session_state["current_url_input"] = user_url
-        st.session_state["last_analyzed_url"] = user_url
-        parsed = downloader.parse_taphuan_url(user_url)
+if analyze_btn or (user_url and user_url != st.session_state.get("last_analyzed_url")):
+    st.session_state["current_url_input"] = user_url
+    st.session_state["last_analyzed_url"] = user_url
+    parsed = downloader.parse_taphuan_url(user_url)
 
-        if not parsed["valid"]:
-            st.error(parsed["message"])
+    if not parsed["valid"]:
+        st.error(parsed["message"])
+        st.session_state["analyzed_data"] = None
+    else:
+        with st.spinner("Đang lấy thông tin sách..."):
+            if parsed["type"] == "doc_sach":
+                info, err = downloader.fetch_reader_info(parsed["url"])
+                kind = "doc_sach"
+            else:
+                info, err = downloader.fetch_detail_editions(parsed["url"])
+                kind = "chi_tiet_sach"
+        if err:
+            st.error(err)
             st.session_state["analyzed_data"] = None
         else:
-            with st.spinner("Đang lấy thông tin sách..."):
-                if parsed["type"] == "doc_sach":
-                    info, err = downloader.fetch_reader_info(parsed["url"])
-                    kind = "doc_sach"
-                else:
-                    info, err = downloader.fetch_detail_editions(parsed["url"])
-                    kind = "chi_tiet_sach"
-            if err:
-                st.error(err)
-                st.session_state["analyzed_data"] = None
-            else:
-                st.session_state["analyzed_data"] = {"type": kind, "data": info}
+            st.session_state["analyzed_data"] = {"type": kind, "data": info}
 
-    res = st.session_state.get("analyzed_data")
+res = st.session_state.get("analyzed_data")
 
-    # ── Sách đơn lẻ ──
-    if res and res["type"] == "doc_sach":
-        book = res["data"]
-        title = book["title"]
-        page_urls = book["page_urls"]
-        total_pages = book["total_pages"]
-        storage = CFG.get("storage_dir")
+# ── Sách đơn lẻ ──
+if res and res["type"] == "doc_sach":
+    book = res["data"]
+    title = book["title"]
+    page_urls = book["page_urls"]
+    total_pages = book["total_pages"]
+    storage = CFG.get("storage_dir")
 
-        render_html(f"""
-        <div class="vb-book">
-            <div class="vb-book-ico">📘</div>
-            <div>
-                <div class="vb-book-title">{h(title)}</div>
-                <div class="vb-book-meta">{total_pages} trang • Bản gốc NXB Giáo dục</div>
-            </div>
+    render_html(f"""
+    <div class="vb-book">
+        <div class="vb-book-ico">📘</div>
+        <div>
+            <div class="vb-book-title">{h(title)}</div>
+            <div class="vb-book-meta">{total_pages} trang • Bản gốc NXB Giáo dục</div>
         </div>
-        """)
+    </div>
+    """)
 
-        offline_path, offline_sz = downloader.find_offline_pdf(title, storage)
-        cached = st.session_state["pdf_cache"].get(title)
+    offline_path, offline_sz = downloader.find_offline_pdf(title, storage)
+    cached = st.session_state["pdf_cache"].get(title)
 
-        if offline_path and os.path.exists(offline_path):
-            try:
-                with open(offline_path, "rb") as f:
-                    file_data = f.read()
-                st.download_button(
-                    f"💾  Tải ngay PDF có sẵn ({offline_sz:.1f} MB)",
-                    data=file_data, file_name=os.path.basename(offline_path),
-                    mime="application/pdf", type="primary", use_container_width=True,
-                )
-            except Exception as e:
-                st.error(f"Lỗi đọc file: {e}")
-        elif cached:
-            st.success(f"✅ Đã xử lý xong ({cached[1]:.1f} MB)")
+    if offline_path and os.path.exists(offline_path):
+        try:
+            with open(offline_path, "rb") as f:
+                file_data = f.read()
             st.download_button(
-                f"💾  Lưu file PDF về máy ({cached[1]:.1f} MB)",
-                data=cached[0], file_name=f"{downloader.sanitize_filename(title)}.pdf",
+                f"💾  Tải ngay PDF có sẵn ({offline_sz:.1f} MB)",
+                data=file_data, file_name=os.path.basename(offline_path),
                 mime="application/pdf", type="primary", use_container_width=True,
             )
-        else:
-            if st.button(f"📥  Bắt đầu tải PDF ({total_pages} trang)", type="primary", use_container_width=True):
-                p_bar = st.progress(0)
-                p_label = st.empty()
+        except Exception as e:
+            st.error(f"Lỗi đọc file: {e}")
+    elif cached:
+        st.success(f"✅ Đã xử lý xong ({cached[1]:.1f} MB)")
+        st.download_button(
+            f"💾  Lưu file PDF về máy ({cached[1]:.1f} MB)",
+            data=cached[0], file_name=f"{downloader.sanitize_filename(title)}.pdf",
+            mime="application/pdf", type="primary", use_container_width=True,
+        )
+    else:
+        if st.button(f"📥  Bắt đầu tải PDF ({total_pages} trang)", type="primary", use_container_width=True):
+            p_bar = st.progress(0)
+            p_label = st.empty()
 
-                def progress_cb(current, total, msg):
-                    p_bar.progress(min(int(current / total * 100), 100) if total else 0)
-                    p_label.caption(f"{msg} ({current}/{total})")
+            def progress_cb(current, total, msg):
+                p_bar.progress(min(int(current / total * 100), 100) if total else 0)
+                p_label.caption(f"{msg} ({current}/{total})")
 
-                target_save = None
-                if storage and os.path.exists(storage):
-                    target_save = os.path.join(storage, downloader.sanitize_filename(title) + ".pdf")
+            target_save = None
+            if storage and os.path.exists(storage):
+                target_save = os.path.join(storage, downloader.sanitize_filename(title) + ".pdf")
 
-                pdf_bytes, sz_mb, dl_err = downloader.download_pages_and_build_pdf(
-                    page_urls=page_urls, title=title, progress_callback=progress_cb,
-                    save_path=target_save, max_workers=8,
-                )
-                if dl_err:
-                    st.error(dl_err)
-                else:
-                    st.session_state["pdf_cache"][title] = (pdf_bytes, sz_mb)
-                    st.rerun()
+            pdf_bytes, sz_mb, dl_err = downloader.download_pages_and_build_pdf(
+                page_urls=page_urls, title=title, progress_callback=progress_cb,
+                save_path=target_save, max_workers=8,
+            )
+            if dl_err:
+                st.error(dl_err)
+            else:
+                st.session_state["pdf_cache"][title] = (pdf_bytes, sz_mb)
+                st.rerun()
 
-    # ── Môn học nhiều ấn bản ──
-    elif res and res["type"] == "chi_tiet_sach":
-        detail = res["data"]
-        st.markdown(f"<div class='vb-section-title'>📚 {h(detail['main_title'])} · {len(detail['editions'])} ấn bản</div>",
-                    unsafe_allow_html=True)
+# ── Môn học nhiều ấn bản ──
+elif res and res["type"] == "chi_tiet_sach":
+    detail = res["data"]
+    st.markdown(f"<div class='vb-section-title'>📚 {h(detail['main_title'])} · {len(detail['editions'])} ấn bản</div>",
+                unsafe_allow_html=True)
 
-        for i, ed in enumerate(detail["editions"]):
-            off_path, off_sz = downloader.find_offline_pdf(ed["title"], CFG.get("storage_dir"))
-            ok = f"✓ Có sẵn {off_sz:.1f} MB" if off_path else ""
-            c1, c2 = st.columns([4, 1.2], gap="small")
-            with c1:
-                render_html(f"""
-                <div class="vb-edition">
-                    <span class="vb-tag" style="background:{h(ed['badge_color'])};">{h(ed['type_label'])}</span>
-                    <span class="vb-ed-title">{h(ed['title'])}</span>
-                    <span class="vb-ed-ok">{ok}</span>
-                </div>
-                """)
-            with c2:
-                if st.button("Chọn tải", key=f"sel_ed_{i}", use_container_width=True):
-                    st.session_state["current_url_input"] = ed["doc_url"]
-                    st.session_state["last_analyzed_url"] = ""
-                    st.rerun()
+    for i, ed in enumerate(detail["editions"]):
+        off_path, off_sz = downloader.find_offline_pdf(ed["title"], CFG.get("storage_dir"))
+        ok = f"✓ Có sẵn {off_sz:.1f} MB" if off_path else ""
+        c1, c2 = st.columns([4, 1.2], gap="small")
+        with c1:
+            render_html(f"""
+            <div class="vb-edition">
+                <span class="vb-tag" style="background:{h(ed['badge_color'])};">{h(ed['type_label'])}</span>
+                <span class="vb-ed-title">{h(ed['title'])}</span>
+                <span class="vb-ed-ok">{ok}</span>
+            </div>
+            """)
+        with c2:
+            if st.button("Chọn tải", key=f"sel_ed_{i}", use_container_width=True):
+                st.session_state["current_url_input"] = ed["doc_url"]
+                st.session_state["last_analyzed_url"] = ""
+                st.rerun()
 
 # ==========================================
 # 6. KHO GOOGLE DRIVE
 # ==========================================
-if True:
+with st.container(border=True):
     render_html(f"""
-    <div class="vb-card">
+    <div>
         <div class="vb-eyebrow">Kho Google Drive</div>
         <h3>Trọn bộ sách bản gốc chất lượng cao</h3>
         <div class="sub" style="margin-bottom:16px;">
@@ -623,11 +624,11 @@ render_html(f"""
 <div class="vb-footer">
     <div class="vb-footer-inner">
         <div class="vb-row1">
-            <div class="vb-icons">{{icons}}</div>
-            {{f'<div class="vb-eco">Hệ sinh thái: {{eco}}</div>' if eco else ''}}
+            <div class="vb-icons">{icons}</div>
+            {f'<div class="vb-eco">Hệ sinh thái: {eco}</div>' if eco else ''}
         </div>
         <div class="vb-copy">
-            {{h(CFG['copyright'])}} • <a href="mailto:{{h(CFG['support_email'])}}">{{h(CFG['support_email'])}}</a>
+            {h(CFG['copyright'])} • <a href="mailto:{h(CFG['support_email'])}">{h(CFG['support_email'])}</a>
         </div>
     </div>
 </div>

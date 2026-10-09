@@ -149,7 +149,7 @@ html, body, [class*="css"], .stApp {
 
 .block-container {
     max-width: 1200px !important;
-    padding: 96px 1.5rem 110px !important;
+    padding: 72px 1.5rem 110px !important;
 }
 
 /* ── Header cố định ── */
@@ -240,12 +240,12 @@ html, body, [class*="css"], .stApp {
     border-radius: var(--radius) !important; padding: 22px 24px !important; 
     margin-bottom: 16px !important; box-shadow: 0 1px 3px rgba(15,23,42,.04) !important;
 }
-.vb-eyebrow {
-    font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-    color: var(--brand); margin-bottom: 6px;
+.vb-card-title { margin: 0 0 4px; font-size: 19px; font-weight: 700; color: var(--ink); padding: 0; }
+.vb-card-desc { font-size: 14px; color: #64748b; line-height: 1.55; }
+.vb-badge-card {
+    font-size: 11px; font-weight: 700; color: #047857; background: #d1fae5;
+    padding: 3px 10px; border-radius: 999px; margin-left: 8px; vertical-align: text-bottom;
 }
-.vb-card h3 { margin: 0 0 6px; font-size: 19px; font-weight: 700; color: var(--ink); padding: 0; }
-.vb-card .sub { font-size: 14px; color: var(--muted); line-height: 1.55; }
 
 /* ── Kết quả sách ── */
 .vb-book {
@@ -386,10 +386,12 @@ render_html(f"""
 # ==========================================
 with st.container(border=True):
     render_html("""
-    <div>
-        <div class="vb-eyebrow">Công cụ tải sách</div>
-        <h3 style="display:inline-block; margin:0 8px 12px 0;">Dán link để tải PDF bản gốc NXB Giáo dục</h3>
-        <span class="sub" style="display:inline-block;">Hỗ trợ link đọc sách và môn học từ <a href="https://taphuan.nxbgd.vn" target="_blank" style="color:var(--brand); text-decoration:none; font-weight:600;">taphuan.nxbgd.vn</a></span>
+    <div style="margin-bottom: 24px;">
+        <h3 class="vb-card-title">
+            Dán link để tải PDF bản gốc NXB Giáo dục
+            <span class="vb-badge-card">Công cụ tải sách</span>
+        </h3>
+        <div class="vb-card-desc">Hỗ trợ link đọc sách và môn học từ <a href="https://taphuan.nxbgd.vn" target="_blank" style="color:var(--brand); text-decoration:none; font-weight:600;">taphuan.nxbgd.vn</a></div>
         <div class="vb-steps">
             <div class="vb-step"><b>1. Dán link</b>Sao chép đường dẫn trang đọc sách.</div>
             <div class="vb-step"><b>2. Kiểm tra</b>Hệ thống đọc thông tin và số trang.</div>
@@ -403,7 +405,7 @@ with st.container(border=True):
         user_url = st.text_input(
             "Link taphuan.nxbgd.vn",
             value=st.session_state["current_url_input"],
-            placeholder="https://taphuan.nxbgd.vn/tap-huan/doc-sach/...",
+            placeholder="https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgv-tin-hoc-12.4926897532#page=0",
             label_visibility="collapsed",
         )
     with col_btn:
@@ -524,15 +526,18 @@ elif res and res["type"] == "chi_tiet_sach":
 # ==========================================
 with st.container(border=True):
     render_html(f"""
-    <div>
-        <div class="vb-eyebrow">Kho Google Drive</div>
-        <h3>Trọn bộ sách bản gốc chất lượng cao</h3>
-        <div class="sub" style="margin-bottom:16px;">
+    <div style="margin-bottom: 24px;">
+        <h3 class="vb-card-title">
+            Trọn bộ sách bản gốc chất lượng cao
+            <span class="vb-badge-card">Kho Google Drive</span>
+            <span style="display:inline-block; font-size:11px; font-weight:700; color:#059669; background:#d1fae5; padding:3px 10px; border-radius:999px; margin-left:4px; vertical-align:text-bottom;">Cập nhật {h(CFG['drive_date'])}</span>
+        </h3>
+        <div class="vb-card-desc">
             Sách giáo khoa, sách giáo viên và sách bài tập từ lớp 1 đến lớp 12.
-            Tốc độ cao, không quảng cáo, cập nhật liên tục (lần cuối {h(CFG['drive_date'])}).
+            Tốc độ cao, không quảng cáo.
         </div>
-        <a href="{h(CFG['drive_link'])}" target="_blank" style="display:flex; align-items:center; justify-content:center; background:var(--brand); color:#fff; border-radius:12px; height:46px; font-weight:600; text-decoration:none; transition:all 0.15s; width:100%;">☁️ Mở kho sách trọn bộ (52 GB) ↗</a>
     </div>
+    <a href="{h(CFG['drive_link'])}" target="_blank" style="display:flex; align-items:center; justify-content:center; background:var(--brand); color:#fff; border-radius:12px; height:46px; font-weight:600; text-decoration:none; transition:all 0.15s; width:100%; margin-bottom: 24px;">☁️ Mở kho sách trọn bộ (52 GB) ↗</a>
     """)
 
     st.markdown("<div class='vb-section-title' style='text-align:center;'>Hoặc chọn theo khối lớp</div>", unsafe_allow_html=True)

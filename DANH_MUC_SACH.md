@@ -1,7 +1,7 @@
 # 📚 CÂY THƯ MỤC VÀ DANH MỤC TOÀN BỘ SÁCH TAPHUAN.NXBGD.VN
 
-> **Thời gian quét & lập chỉ mục:** 05/10/2026 16:42  
-> **Tổng số sách đã được bóc tách link:** **1749 cuốn** (gồm cả Bộ SGK Thống nhất & Chân trời sáng tạo)  
+> **Thời gian quét & lập chỉ mục:** 05/10/2026 19:46  
+> **Tổng số sách đã được bóc tách link:** **1718 cuốn** (gồm cả Bộ SGK Thống nhất & Chân trời sáng tạo)  
 
 ---
 
@@ -10,18 +10,18 @@
 ### 📦 Thống kê theo Bộ sách:
 | Bộ sách | Số lượng ấn bản | Tỷ lệ |
 | :--- | :---: | :---: |
-| **Bộ SGK Thống nhất** | **1005** | 57.5% |
-| **Chân trời sáng tạo** | **744** | 42.5% |
-| **TỔNG CỘNG** | **1749** | 100% |
+| **Bộ SGK Thống nhất** | **1005** | 58.5% |
+| **Chân trời sáng tạo** | **713** | 41.5% |
+| **TỔNG CỘNG** | **1718** | 100% |
 
 ### 📚 Thống kê theo Loại sách:
 | Phân loại | Số lượng | Tỷ lệ | Ghi chú |
 | :--- | :---: | :---: | :--- |
-| **📘 Sách Giáo Viên (SGV)** | **808** | 46.2% | Tài liệu giảng dạy cho giáo viên |
-| **📕 Sách Giáo Khoa (SGK)** | **620** | 35.4% | Bản đọc điện tử chuẩn của học sinh |
-| **📙 Sách / Vở Bài Tập** | **291** | 16.6% | Vở bài tập, sách bài tập bổ trợ |
+| **📘 Sách Giáo Viên (SGV)** | **801** | 46.6% | Tài liệu giảng dạy cho giáo viên |
+| **📕 Sách Giáo Khoa (SGK)** | **601** | 35.0% | Bản đọc điện tử chuẩn của học sinh |
+| **📙 Sách / Vở Bài Tập** | **286** | 16.6% | Vở bài tập, sách bài tập bổ trợ |
 | **📑 Tài liệu tập huấn** | **30** | 1.7% | Tài liệu bồi dưỡng giáo viên, tập viết... |
-| **TỔNG CỘNG** | **1749** | 100% | *Đầy đủ từ Lớp 1 đến Lớp 12* |
+| **TỔNG CỘNG** | **1718** | 100% | *Đầy đủ từ Lớp 1 đến Lớp 12* |
 
 ## 🌳 2. Cây thư mục chi tiết (Kèm Link trực tiếp)
 
@@ -1367,7 +1367,7 @@
   - [📕 Sách Giáo Khoa (SGK)] [SGK Tiếng Anh 12 - Global Success](https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-tieng-anh-12-global-success.4879792656)
   - [📑 Tài liệu tập huấn] [Tài liệu tập huấn Tiếng Anh 12 - Global Success](https://taphuan.nxbgd.vn/tap-huan/doc-sach/tai-lieu-tap-huan-tieng-anh-12-global-success.4625463475)
 
-## 🏛️ CHÂN TRỜI SÁNG TẠO (744 cuốn)
+## 🏛️ CHÂN TRỜI SÁNG TẠO (713 cuốn)
 
 ### 📂 Lớp 1 (31 cuốn)
 - 📁 **Tự nhiên và Xã hội 1** `(5 ấn bản)`
@@ -2314,43 +2314,3 @@
   - [📘 Sách Giáo Viên (SGV)] [SGV Giáo dục quốc phòng và an ninh 12](https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgv-giao-duc-quoc-phong-va-an-ninh-12.4538955176)
   - [📕 Sách Giáo Khoa (SGK)] [SGK Giáo dục quốc phòng và an ninh 12](https://taphuan.nxbgd.vn/tap-huan/doc-sach/shs-giao-duc-quoc-phong-va-an-ninh-12.4538957724)
   - [📙 Sách / Vở Bài Tập] [SBT Giáo dục quốc phòng và an ninh 12 (Bài mẫu)](https://taphuan.nxbgd.vn/tap-huan/doc-sach/sbt-giao-duc-quoc-phong-va-an-ninh-12-bai-mau.4528957669)
-
-### 📂 Lớp dùng chung (31 cuốn)
-- 📁 **Tự nhiên và Xã hội 1** `(5 ấn bản)`
-  - [📘 Sách Giáo Viên (SGV)] [SGV Tự nhiên và Xã hội 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgv-tu-nhien-va-xa-hoi-1.4540160119)
-  - [📕 Sách Giáo Khoa (SGK)] [SGK Tự nhiên và xã hội 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/shs-tu-nhien-va-xa-hoi-1.4540161819)
-  - [📕 Sách Giáo Khoa (SGK)] [Tài liệu Giới thiệu SGK môn Tự nhiên và Xã hội 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/tai-lieu-gioi-thieu-sgk-mon-tu-nhien-va-xa-hoi-1.4529809177)
-  - [📕 Sách Giáo Khoa (SGK)] [Tài liệu tập huấn dạy học theo SGK mới môn Tự nhiên và Xã hội 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/tai-lieu-tap-huan-day-hoc-theo-sgk-moi-mon-tu-nhien-va-xa-hoi-1.4529804932)
-  - [📙 Sách / Vở Bài Tập] [VBT Tự nhiên và xã hội 1 (Bài mẫu)](https://taphuan.nxbgd.vn/tap-huan/doc-sach/vbt-tu-nhien-va-xa-hoi-1-bai-mau.4529807133)
-- 📁 **Đạo đức 1** `(5 ấn bản)`
-  - [📘 Sách Giáo Viên (SGV)] [SGV Đạo đức 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgv-dao-duc-1.4539178432)
-  - [📕 Sách Giáo Khoa (SGK)] [SGK Đạo đức 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/shs-dao-duc-1.4539176660)
-  - [📕 Sách Giáo Khoa (SGK)] [Tài liệu Giới thiệu SGK môn Đạo đức 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/tai-lieu-gioi-thieu-sgk-mon-dao-duc-1.4529044318)
-  - [📕 Sách Giáo Khoa (SGK)] [Tài liệu tập huấn dạy học theo SGK mới môn Đạo đức 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/tai-lieu-tap-huan-day-hoc-theo-sgk-moi-mon-dao-duc-1.4529042268)
-  - [📙 Sách / Vở Bài Tập] [VBT Đạo đức 1 (Bài mẫu)](https://taphuan.nxbgd.vn/tap-huan/doc-sach/vbt-dao-duc-1-bai-mau.4529041882)
-- 📁 **Âm nhạc 1** `(6 ấn bản)`
-  - [📘 Sách Giáo Viên (SGV)] [SGV Âm nhạc 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgv-am-nhac-1.4537899965)
-  - [📘 Sách Giáo Viên (SGV)] [Slide phục vụ bồi dưỡng giáo viên sử dụng SGK môn Âm nhạc 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/slide-phuc-vu-boi-duong-giao-vien-su-dung-sgk-mon-am-nhac-1.4528769478)
-  - [📕 Sách Giáo Khoa (SGK)] [SGK Âm nhạc 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/shs-am-nhac-1.4537903715)
-  - [📕 Sách Giáo Khoa (SGK)] [Tài liệu Giới thiệu SGK môn Âm nhạc 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/tai-lieu-gioi-thieu-sgk-mon-am-nhac-1.4528767349)
-  - [📕 Sách Giáo Khoa (SGK)] [Tài liệu tập huấn dạy học theo SGK mới môn Âm nhạc 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/tai-lieu-tap-huan-day-hoc-theo-sgk-moi-mon-am-nhac-1.4528771153)
-  - [📙 Sách / Vở Bài Tập] [VBT Âm nhạc 1 (Bài mẫu)](https://taphuan.nxbgd.vn/tap-huan/doc-sach/vbt-am-nhac-1-bai-mau.4528768267)
-- 📁 **Mĩ thuật 1** `(5 ấn bản)`
-  - [📘 Sách Giáo Viên (SGV)] [SGV Mĩ thuật 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgv-mi-thuat-1.4540093722)
-  - [📕 Sách Giáo Khoa (SGK)] [SGK Mĩ thuật 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/shs-mi-thuat-1.4540092643)
-  - [📕 Sách Giáo Khoa (SGK)] [Tài liệu Giới thiệu SGK môn Mĩ thuật 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/tai-lieu-gioi-thieu-sgk-mon-mi-thuat-1.4529254739)
-  - [📕 Sách Giáo Khoa (SGK)] [Tài liệu tập huấn dạy học theo SGK mới môn Mĩ thuật 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/tai-lieu-tap-huan-day-hoc-theo-sgk-moi-mon-mi-thuat-1.4529252871)
-  - [📙 Sách / Vở Bài Tập] [VBT Mĩ thuật 1 (Bài mẫu)](https://taphuan.nxbgd.vn/tap-huan/doc-sach/vbt-mi-thuat-1-bai-mau.4529257793)
-- 📁 **Hoạt động trải nghiệm 1** `(5 ấn bản)`
-  - [📘 Sách Giáo Viên (SGV)] [SGV Hoạt động trải nghiệm 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgv-hoat-dong-trai-nghiem-1.4538850431)
-  - [📕 Sách Giáo Khoa (SGK)] [SGK Hoạt động trải nghiệm 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/shs-hoat-dong-trai-nghiem-1.4538852830)
-  - [📕 Sách Giáo Khoa (SGK)] [Tài liệu Giới thiệu SGK môn Hoạt động trải nghiệm 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/tai-lieu-gioi-thieu-sgk-mon-hoat-dong-trai-nghiem-1.4528904563)
-  - [📕 Sách Giáo Khoa (SGK)] [Tài liệu tập huấn dạy học theo SGK mới môn Hoạt động trải nghiệm 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/tai-lieu-tap-huan-day-hoc-theo-sgk-moi-mon-hoat-dong-trai-nghiem-1.4528905510)
-  - [📙 Sách / Vở Bài Tập] [VBT Hoạt động trải nghiệm 1 (Bài mẫu)](https://taphuan.nxbgd.vn/tap-huan/doc-sach/vbt-hoat-dong-trai-nghiem-1-bai-mau.4528903364)
-- 📁 **Tiếng Anh 1 - Family and Friends - National Edition** `(1 ấn bản)`
-  - [📕 Sách Giáo Khoa (SGK)] [SGK Tiếng Anh 1 - Family and Friends - National Edition](https://taphuan.nxbgd.vn/tap-huan/doc-sach/shs-tieng-anh-1-family-and-friends-national-edition.4539973967)
-- 📁 **Giáo dục thể chất 1** `(4 ấn bản)`
-  - [📘 Sách Giáo Viên (SGV)] [SGV Giáo dục thể chất 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgv-giao-duc-the-chat-1.4534664904)
-  - [📕 Sách Giáo Khoa (SGK)] [SGK Giáo dục thể chất 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/shs-giao-duc-the-chat-1.4534668796)
-  - [📕 Sách Giáo Khoa (SGK)] [Tài liệu Giới thiệu SGK môn Giáo dục thể chất 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/tai-lieu-gioi-thieu-sgk-mon-giao-duc-the-chat-1.4528556561)
-  - [📕 Sách Giáo Khoa (SGK)] [Tài liệu tập huấn dạy học theo SGK mới môn Giáo dục thể chất 1](https://taphuan.nxbgd.vn/tap-huan/doc-sach/tai-lieu-tap-huan-day-hoc-theo-sgk-moi-mon-giao-duc-the-chat-1.4528555503)

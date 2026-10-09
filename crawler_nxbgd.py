@@ -16,6 +16,7 @@ from io import BytesIO
 from PIL import Image
 from concurrent.futures import ThreadPoolExecutor
 import urllib3
+import xml.etree.ElementTree as ET
 
 if sys.stdout.encoding.lower() != 'utf-8':
     try:
@@ -30,7 +31,30 @@ HEADERS = {
 }
 
 DATA_CACHE_FILE = "books_data.json"
-OUTPUT_DIR = "downloaded_books"
+
+def get_default_output_dir():
+    # 1. Thử lấy từ config.xml
+    if os.path.exists("config.xml"):
+        try:
+            tree = ET.parse("config.xml")
+            brand = tree.getroot().find("brand")
+            if brand is not None:
+                configured = brand.findtext("booksStorageDir")
+                if configured and configured.strip():
+                    return configured.strip()
+        except Exception:
+            pass
+    # 2. Mặc định D:\DuLieu\SachDienTu hoặc D:\SachDienTu nếu có
+    if os.path.exists(r"D:\DuLieu\SachDienTu"):
+        return r"D:\DuLieu\SachDienTu"
+    if os.path.exists(r"D:\SachDienTu"):
+        return r"D:\SachDienTu"
+    if os.path.exists(r"D:\\"):
+        return r"D:\DuLieu\SachDienTu"
+    # 3. Fallback thư mục nội bộ
+    return "downloaded_books"
+
+OUTPUT_DIR = get_default_output_dir()
 
 
 def sanitize_filename(name):
@@ -143,21 +167,21 @@ def scan_catalog():
             print(f"  ⚠️ Lỗi khi quét Lớp {grade} (CTST): {e}")
         time.sleep(0.2)
 
-    # 3. SÁCH KHÁC DÙNG CHUNG (Lớp 13 / Môn đặc thù)
+    # 3. SÁCH KHÁC DÙNG CHUNG (Lớp 13 / Môn đặc thù) - Tự động bỏ qua nếu đã quét ở các lớp trên
     try:
         url_g13 = "https://taphuan.nxbgd.vn/tap-huan/cac-bo-sach-khac?grade=13&id_book=3"
         r13 = session.get(url_g13, verify=False, timeout=20)
         if r13.status_code == 200:
+            existing_urls = set(c['detail_url'] for c in catalog)
             cards = re.findall(
                 r'<a[^>]*href=["\'](https://taphuan\.nxbgd\.vn/tap-huan/chi-tiet-sach/[^"\']+|/tap-huan/chi-tiet-sach/[^"\']+)["\'][^>]*>(.*?)</a>',
                 r13.text, re.DOTALL
             )
             g13_count = 0
-            seen_g13 = set()
             for link, content in cards:
                 full_link = f"https://taphuan.nxbgd.vn{link}" if link.startswith('/') else link
-                if full_link not in seen_g13:
-                    seen_g13.add(full_link)
+                if full_link not in existing_urls:
+                    existing_urls.add(full_link)
                     clean_title = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', content)).strip()
                     if clean_title:
                         catalog.append({
@@ -170,7 +194,7 @@ def scan_catalog():
                         })
                         g13_count += 1
             if g13_count > 0:
-                print(f"  • Lớp dùng chung (CTST): Tìm thấy {g13_count:2d} đầu sách")
+                print(f"  • Lớp dùng chung (CTST): Bổ sung {g13_count:2d} đầu sách mới")
     except Exception as e:
         print(f"  ⚠️ Lỗi khi quét lớp dùng chung: {e}")
 
@@ -370,12 +394,15 @@ def parse_args():
     parser.add_argument("--type", choices=["sgv", "sgv_sbt", "all"], default=None, help="Loại sách: sgv, sgv_sbt, hoặc all")
     parser.add_argument("--grade", type=int, choices=list(range(1, 13)), default=None, help="Khối lớp (1-12). Bỏ trống để tải tất cả")
     parser.add_argument("--workers", type=int, default=8, help="Số luồng tải ảnh song song (mặc định 8)")
+    parser.add_argument("--output-dir", default=OUTPUT_DIR, help=f"Thư mục lưu trữ sách (mặc định: {OUTPUT_DIR})")
     parser.add_argument("--yes", "-y", action="store_true", help="Tự động đồng ý và tải ngay không cần hỏi xác nhận")
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
+    output_dir = args.output_dir or OUTPUT_DIR
+    os.makedirs(output_dir, exist_ok=True)
 
     print("""
 ================================================================
@@ -453,7 +480,7 @@ def main():
         return
 
     # 4. Xác nhận bắt đầu tải
-    print(f"\nThư mục lưu trữ: ./{OUTPUT_DIR}/")
+    print(f"\nThư mục lưu trữ: {os.path.abspath(output_dir)}")
     print(f"Tổng số sách: {len(filtered_books)} cuốn.")
     if not args.yes:
         confirm = input("\nBắt đầu tải về máy? (Y/n): ").strip().lower()
@@ -475,9 +502,9 @@ def main():
 
     for i, book in enumerate(filtered_books, 1):
         print(f"\n[{i}/{len(filtered_books)}]", end=" ")
-        # Phân thư mục theo cấu trúc phẳng: downloaded_books/[Bộ]/Lop_xx/
+        # Phân thư mục theo cấu trúc phẳng: [output_dir]/[Bộ]/Lop_xx/
         series_dir = book.get("series", "Bo_SGK_Thong_Nhat")
-        target_folder = os.path.join(OUTPUT_DIR, series_dir, book["grade_name"])
+        target_folder = os.path.join(output_dir, series_dir, book["grade_name"])
         ok = download_and_make_pdf(session, book, target_folder, max_workers=args.workers)
         if ok:
             success_count += 1
@@ -492,9 +519,9 @@ def main():
     if fail_count > 0:
         print(f"• Bị lỗi: {fail_count} cuốn (có thể chạy lại script để tải lại các cuốn bị thiếu)")
     print(f"• Thời gian thực hiện: {duration/60:.1f} phút")
-    print(f"• Thư mục lưu trữ: {os.path.abspath(OUTPUT_DIR)}")
+    print(f"• Thư mục lưu trữ: {os.path.abspath(output_dir)}")
     print("=" * 60)
-    print("👉 Bây giờ bạn có thể kéo thả thư mục 'downloaded_books' lên Google Drive của bạn!")
+    print(f"👉 Bây giờ bạn có thể kéo thả thư mục '{os.path.abspath(output_dir)}' lên Google Drive của bạn!")
 
 
 if __name__ == "__main__":

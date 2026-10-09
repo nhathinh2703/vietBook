@@ -2,33 +2,41 @@ import streamlit as st
 import json
 import os
 import re
+import io
+import hmac
 import urllib3
 import xml.etree.ElementTree as ET
+import downloader
+import sync_manager
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Hàm render HTML an toàn, loại bỏ thụt lề thừa để tránh Markdown parse sai
+# ── Quản trị ─────────────────────────────────────────────────
+ADMIN_PASSWORD = os.environ.get("VIETBOOK_ADMIN_PASSWORD", "")
+
 def render_html(html_str):
     cleaned = "\n".join(line.strip() for line in html_str.strip().splitlines())
     st.markdown(cleaned, unsafe_allow_html=True)
 
-
 # ==========================================
-# 1. ĐỌC CẤU HÌNH ĐỘNG TỪ CONFIG.XML
+# 1. ĐỌC CẤU HÌNH TỪ CONFIG.XML
 # ==========================================
+@st.cache_data
 def load_config(xml_path="config.xml"):
     config = {
         "master_name": "vietApps",
         "app_name": "vietBook",
-        "badge": "FREE",
+        "badge": "Miễn phí",
         "tagline": "Hệ sinh thái ứng dụng miễn phí phục vụ cộng đồng",
-        "app_title": "Thư viện tra cứu & Tải sách giáo khoa điện tử",
-        "hero_title": "Kho sách điện tử & Sách giáo viên toàn diện",
-        "app_desc": "Hệ thống tra cứu tức thì và tải trọn bộ sách giáo viên, sách giáo khoa, sách bài tập chất lượng gốc.",
-        "copyright": "© 2026 vietApps • vietBook – Thư viện sách điện tử",
+        "app_title": "Trình tải sách giáo khoa gốc & Kho Google Drive",
+        "hero_title": "Trình tải sách giáo khoa bản gốc",
+        "app_desc": "Hỗ trợ dán link tải sách bản gốc chất lượng cao từ taphuan.nxbgd.vn và chia sẻ trọn bộ sách giáo viên, sách giáo khoa, sách bài tập trên Google Drive.",
+        "copyright": "© 2026 vietApps • vietBook",
         "support_email": "vietapps.official@gmail.com",
-        "connect_message": "Kết nối với chúng tôi để xem hướng dẫn, cập nhật sách mới và sử dụng các tiện ích miễn phí",
-        "drive_link": "",
+        "connect_message": "Kết nối cộng đồng vietApps",
+        "drive_link": "https://drive.google.com/drive/folders/1iXlCFyOBZdM5AfOojn4h3WCVP-mAXdSp?usp=sharing",
+        "drive_date": "05/10/2026",
+        "storage_dir": r"D:\DuLieu\SachDienTu" if os.path.exists(r"D:\DuLieu\SachDienTu") else (r"D:\SachDienTu" if os.path.exists(r"D:\SachDienTu") else "downloaded_books"),
         "ecosystem": [],
         "socials": []
     }
@@ -50,8 +58,12 @@ def load_config(xml_path="config.xml"):
             config["app_desc"] = brand.findtext("appDescription", config["app_desc"])
             config["copyright"] = brand.findtext("copyright", config["copyright"])
             config["support_email"] = brand.findtext("supportEmail", config["support_email"])
-            config["connect_message"] = brand.findtext("connectMessage", config["connect_message"])
-            config["drive_link"] = brand.findtext("driveLink", "") or ""
+            msg = brand.findtext("connectMessage", config.get("connect_message", "Kết nối cộng đồng vietApps"))
+            config["connect_message"] = msg
+            config["connectMessage"] = msg
+            config["drive_link"] = (brand.findtext("driveLink", config["drive_link"]) or "").strip()
+            config["drive_date"] = (brand.findtext("driveDate", config["drive_date"]) or "").strip()
+            config["storage_dir"] = brand.findtext("booksStorageDir", config["storage_dir"]) or config["storage_dir"]
 
         eco = root.find("ecosystem")
         if eco is not None:
@@ -74,6 +86,7 @@ def load_config(xml_path="config.xml"):
                     config["socials"].append({
                         "id": s.get("id", ""),
                         "name": s.findtext("name", ""),
+                        "title": s.findtext("title", s.findtext("name", "")),
                         "url": s.findtext("url", "#"),
                         "color": s.findtext("color", "#2563eb")
                     })
@@ -86,7 +99,7 @@ def load_config(xml_path="config.xml"):
 CFG = load_config()
 
 # ==========================================
-# 2. CẤU HÌNH TRANG STREAMLIT
+# 2. CẤU HÌNH TRANG & CSS
 # ==========================================
 st.set_page_config(
     page_title=f"{CFG['app_name']} – {CFG['app_title']}",
@@ -95,615 +108,595 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS phong cách hiện đại viFix & vietApps
 render_html("""
 <style>
+    /* ── ẨN THANH CÔNG CỤ MẶC ĐỊNH STREAMLIT ── */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    .block-container {
-        max-width: 1240px !important;
-        padding-top: 1rem !important;
-        padding-bottom: 1.2rem !important;
-        padding-left: 1.2rem !important;
-        padding-right: 1.2rem !important;
+    /* ── TYPOGRAPHY & ĐỘ RỘNG TRANG HIỆN ĐẠI (1200px) ── */
+    html, body, [class*="css"] {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+        color: #1e293b;
+        background-color: #f8fafc;
     }
 
-    /* NAVBAR */
-    .vb-nav-bar {
+    .block-container {
+        max-width: 1200px !important;
+        padding-top: 1.2rem !important;
+        padding-bottom: 2.5rem !important;
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+    }
+
+    /* ── HEADER THANH ĐIỀU HƯỚNG ── */
+    .vb-topbar {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 16px 24px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 12px 20px;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        margin-bottom: 14px;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     }
-    .vb-brand-left {
+    .vb-brand-wrap {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
     }
-    .vb-brand-icon {
-        width: 40px;
-        height: 40px;
+    .vb-brand-avatar {
+        width: 44px;
+        height: 44px;
+        background: linear-gradient(135deg, #0d9488, #0f766e);
         border-radius: 12px;
-        background: linear-gradient(135deg, #10b981, #059669);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
-        font-size: 20px;
-        box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);
-    }
-    .vb-brand-title {
         font-size: 22px;
-        font-weight: 900;
-        background: linear-gradient(90deg, #059669, #10b981);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        letter-spacing: -0.4px;
+        color: #ffffff;
+        box-shadow: 0 2px 4px rgba(13, 148, 136, 0.25);
     }
-    .vb-brand-badge {
-        font-size: 10px;
+    .vb-brand-name {
+        font-size: 20px;
         font-weight: 800;
-        padding: 2px 8px;
-        border-radius: 12px;
-        background: #d1fae5;
-        color: #065f46;
-        margin-left: 6px;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
-    .vb-nav-tagline {
+    .vb-badge-pill {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        background: #ecfdf5;
+        color: #047857;
+        border: 1px solid #a7f3d0;
+        border-radius: 999px;
+    }
+    .vb-brand-desc {
         font-size: 13px;
         color: #64748b;
-        font-weight: 500;
+        margin-top: 2px;
     }
 
-    /* THẺ THỐNG KÊ (STAT CARDS) */
-    .vb-stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 14px;
-        margin-bottom: 18px;
-    }
-    @media (max-width: 800px) {
-        .vb-stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-    .vb-stat-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        padding: 14px 16px;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-    .vb-stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-    .vb-stat-icon-wrap {
-        width: 46px;
-        height: 46px;
+    /* ── TABS HIỆN ĐẠI & RÕ RÀNG ── */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+        background-color: #e2e8f0;
+        padding: 6px;
         border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 22px;
-        flex-shrink: 0;
+        margin-bottom: 20px;
     }
-    .vb-stat-num {
-        font-size: 22px;
-        font-weight: 900;
-        color: #0f172a;
-        line-height: 1.1;
-    }
-    .vb-stat-label {
-        font-size: 12.5px;
+    .stTabs [data-baseweb="tab"] {
+        height: 46px;
+        border-radius: 8px;
+        padding: 0 24px;
+        font-size: 15px;
         font-weight: 600;
-        color: #64748b;
-        margin-top: 3px;
+        color: #475569;
+        transition: all 0.2s;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #ffffff !important;
+        color: #0f766e !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
 
-    /* KHUNG TÌM KIẾM & BẢNG SÁCH */
-    .vb-card {
+    /* ── CĂN ĐỀU KHỐI NHẬP LIỆU & NÚT BẤM (FIX LỆCH HÀNG) ── */
+    .search-row-container {
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 16px;
-        padding: 18px 20px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-        margin-bottom: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
-    .vb-card-title {
-        font-size: 16px;
-        font-weight: 800;
-        color: #1e293b;
-        margin-bottom: 12px;
+    div[data-testid="stHorizontalBlock"] {
+        align-items: flex-end !important;
+    }
+    .stTextInput > div > div {
+        height: 48px !important;
+        border-radius: 10px !important;
+        border: 1px solid #cbd5e1 !important;
+        background-color: #ffffff !important;
         display: flex;
         align-items: center;
-        gap: 8px;
+    }
+    .stTextInput input {
+        height: 48px !important;
+        font-size: 15px !important;
+        padding: 0 14px !important;
+    }
+    .stTextInput > div > div:focus-within {
+        border-color: #0d9488 !important;
+        box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15) !important;
+    }
+    .stButton > button, .stDownloadButton > button {
+        height: 48px !important;
+        border-radius: 10px !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease;
+    }
+    .stButton > button[kind="primary"], .stDownloadButton > button[kind="primary"] {
+        background: #0f766e !important;
+        border: 1px solid #0f766e !important;
+    }
+    .stButton > button[kind="primary"]:hover, .stDownloadButton > button[kind="primary"]:hover {
+        background: #115e59 !important;
+        border-color: #115e59 !important;
+        box-shadow: 0 4px 8px rgba(15, 118, 110, 0.25);
     }
 
-    /* BADGE LOẠI SÁCH */
-    .badge-sgv {
-        background: #eff6ff;
-        color: #1d4ed8;
-        border: 1px solid #bfdbfe;
-        font-size: 11px;
-        font-weight: 700;
-        padding: 2px 7px;
-        border-radius: 6px;
-    }
-    .badge-sgk {
-        background: #fef2f2;
-        color: #b91c1c;
-        border: 1px solid #fecaca;
-        font-size: 11px;
-        font-weight: 700;
-        padding: 2px 7px;
-        border-radius: 6px;
-    }
-    .badge-sbt {
-        background: #fffbeb;
-        color: #b45309;
-        border: 1px solid #fde68a;
-        font-size: 11px;
-        font-weight: 700;
-        padding: 2px 7px;
-        border-radius: 6px;
-    }
-    .badge-other {
-        background: #f1f5f9;
-        color: #475569;
-        border: 1px solid #cbd5e1;
-        font-size: 11px;
-        font-weight: 700;
-        padding: 2px 7px;
-        border-radius: 6px;
-    }
-
-    /* LINK BUTTON */
-    .vb-read-btn {
-        display: inline-block;
-        padding: 4px 10px;
-        background: #059669;
-        color: #ffffff !important;
-        text-decoration: none !important;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 700;
-        transition: background 0.15s;
-    }
-    .vb-read-btn:hover {
-        background: #047857;
-    }
-
-    /* HỆ SINH THÁI FOOTER */
-    .vb-eco-wrapper {
-        background: #f8fafc;
+    /* ── CARD THÔNG TIN SÁCH ── */
+    .vb-card-result {
+        background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 14px;
-        padding: 12px 16px;
-        margin-top: 14px;
-        margin-bottom: 12px;
+        padding: 24px;
+        margin-top: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
     }
-    .vb-eco-heading {
-        font-size: 13px;
-        font-weight: 800;
-        color: #334155;
-        margin-bottom: 10px;
-    }
-    .vb-eco-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-    }
-    @media (max-width: 900px) {
-        .vb-eco-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-    .vb-app-item-card {
+    .vb-edition-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px;
+        height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        padding: 10px 12px;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        transition: all 0.15s ease;
-    }
-    .vb-app-card-current {
-        border-color: #10b981;
-        background: #f0fdf4;
-    }
-    .vb-app-item-title {
-        font-size: 13.5px;
-        font-weight: 800;
-        color: #0f172a;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 4px;
-    }
-    .vb-app-item-badge {
-        font-size: 9.5px;
-        font-weight: 800;
-        padding: 1px 6px;
-        border-radius: 6px;
-        color: #ffffff;
-    }
-    .vb-app-item-desc {
-        font-size: 12px;
-        color: #64748b;
-        line-height: 1.35;
-        margin-bottom: 8px;
-    }
-    .vb-app-item-btn {
-        padding: 4px 10px;
-        font-size: 11.5px;
-        font-weight: 700;
-        color: #059669 !important;
-        background: #ecfdf5;
-        border: 1px solid #a7f3d0;
-        border-radius: 6px;
-        text-align: center;
-        text-decoration: none !important;
-    }
-    .vb-app-item-btn-current {
-        padding: 4px 10px;
-        font-size: 11.5px;
-        font-weight: 700;
-        color: #065f46;
-        background: #d1fae5;
-        border-radius: 6px;
-        text-align: center;
+        margin-bottom: 12px;
     }
 
-    /* BOTTOM FOOTER */
-    .vb-bottom-footer {
+    /* ── FOOTER HIỆN ĐẠI (BOTTOM TỰ NHIÊN) ── */
+    .vb-footer-container {
+        margin-top: 40px;
+        padding: 28px 24px 20px;
+        background: #ffffff;
+        border-top: 1px solid #e2e8f0;
+        border-radius: 16px;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 8px;
-        padding: 10px;
-        text-align: center;
+        gap: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
-    .vb-socials-group {
+    .vb-social-wrapper {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         justify-content: center;
-        gap: 8px;
+        gap: 10px;
     }
-    .vb-social-badge {
+    .vb-social-pill {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        padding: 4px 12px;
-        border-radius: 16px;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 999px;
         color: #ffffff !important;
-        font-size: 11.5px;
-        font-weight: 700;
+        font-size: 13px;
+        font-weight: 600;
         text-decoration: none !important;
+        transition: transform 0.15s, opacity 0.15s;
     }
-    .vb-footer-copy {
-        font-size: 12px;
+    .vb-social-pill:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+    .vb-eco-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: center;
+        font-size: 13px;
+        color: #64748b;
+    }
+    .vb-eco-link {
+        color: #0f766e !important;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .vb-eco-link:hover {
+        text-decoration: underline;
+    }
+    .vb-copyright-text {
+        font-size: 13px;
         color: #94a3b8;
+        text-align: center;
+    }
+
+    /* ── RESPONSIVE MOBILE ── */
+    @media (max-width: 768px) {
+        .block-container {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+        .vb-topbar {
+            padding: 14px;
+        }
+        .stTabs [data-baseweb="tab"] {
+            padding: 0 14px;
+            font-size: 13.5px;
+            height: 42px;
+        }
+        .search-row-container {
+            padding: 16px;
+        }
     }
 </style>
 """)
 
 # ==========================================
-# 3. HEADER NAVBAR
+# 3. HEADER THANH ĐIỀU HƯỚNG
 # ==========================================
-drive_btn_html = ""
-if CFG.get("drive_link"):
-    drive_btn_html = f"""
-    <a href="{CFG['drive_link']}" target="_blank" style="padding: 6px 14px; background: #2563eb; color: #fff; font-size: 12.5px; font-weight: 700; border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 6px;">
-        <span>☁️ Tải trọn bộ Google Drive</span>
+render_html(f"""
+<div class="vb-topbar">
+    <div class="vb-brand-wrap">
+        <div class="vb-brand-avatar">📖</div>
+        <div>
+            <div class="vb-brand-name">
+                {CFG['app_name']}
+                <span class="vb-badge-pill">{CFG['badge']}</span>
+            </div>
+            <div class="vb-brand-desc">{CFG['app_title']}</div>
+        </div>
+    </div>
+    <div style="font-size: 13px; color: #64748b; font-weight: 500;">
+        {CFG['tagline']}
+    </div>
+</div>
+""")
+
+# KHỞI TẠO STATE
+if "current_url_input" not in st.session_state:
+    st.session_state["current_url_input"] = ""
+if "analyzed_data" not in st.session_state:
+    st.session_state["analyzed_data"] = None
+
+# ==========================================
+# 4. CHIA 2 TÍNH NĂNG CHÍNH BẰNG TABS
+# ==========================================
+tab_download, tab_drive = st.tabs([
+    "📥 Tải sách bản gốc (NXBGD)",
+    "☁️ Kho sách Google Drive"
+])
+
+# ------------------------------------------
+# TAB 1: TẢI SÁCH TỪ LINK
+# ------------------------------------------
+with tab_download:
+    EXAMPLE_URL = "https://taphuan.nxbgd.vn/tap-huan/doc-sach/sgk-tin-hoc-12-dinh-huong-tin-hoc-ung-dung.4719365396#page=0"
+
+    render_html(f"""
+    <div class="search-row-container">
+        <div style="font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
+            Nhập link sách từ NXB Giáo Dục
+        </div>
+        <div style="font-size: 14px; color: #64748b; margin-bottom: 16px;">
+            Dán đường dẫn đọc sách hoặc môn học từ <strong>taphuan.nxbgd.vn</strong> để tự động bóc tách trang ảnh gốc và lưu thành file PDF.
+        </div>
+        <div style="font-size: 13px; color: #64748b; margin-bottom: 14px; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+            Link mẫu trải nghiệm: <a href="{EXAMPLE_URL}" target="_blank" style="color: #0f766e; font-weight: 600; text-decoration: none;">SGK Tin học 12 (Định hướng ứng dụng) ↗</a>
+        </div>
+    </div>
+    """)
+
+    col_inp, col_btn = st.columns([4.2, 1.2], gap="small")
+
+    with col_inp:
+        user_url = st.text_input(
+            "Nhập link taphuan.nxbgd.vn:",
+            value=st.session_state["current_url_input"],
+            placeholder="Dán link taphuan.nxbgd.vn vào đây...",
+            label_visibility="collapsed"
+        )
+
+    with col_btn:
+        analyze_btn = st.button("Phân tích link", type="primary", use_container_width=True)
+
+    # Xử lý khi nhấn Phân tích
+    if analyze_btn or (user_url and user_url != st.session_state.get("last_analyzed_url")):
+        st.session_state["current_url_input"] = user_url
+        st.session_state["last_analyzed_url"] = user_url
+        parsed = downloader.parse_taphuan_url(user_url)
+
+        if not parsed["valid"]:
+            st.error(parsed["message"])
+            st.session_state["analyzed_data"] = None
+        else:
+            with st.status("Đang kết nối & đọc dữ liệu từ NXBGD...", expanded=False) as status_box:
+                if parsed["type"] == "doc_sach":
+                    info, err = downloader.fetch_reader_info(parsed["url"])
+                    if err:
+                        status_box.update(label="Không thể tải thông tin sách", state="error")
+                        st.error(err)
+                        st.session_state["analyzed_data"] = None
+                    else:
+                        st.session_state["analyzed_data"] = {"type": "doc_sach", "data": info}
+                        status_box.update(label="Đã tìm thấy sách thành công", state="complete")
+                elif parsed["type"] == "chi_tiet_sach":
+                    info, err = downloader.fetch_detail_editions(parsed["url"])
+                    if err:
+                        status_box.update(label="Không thể tải danh sách ấn bản", state="error")
+                        st.error(err)
+                        st.session_state["analyzed_data"] = None
+                    else:
+                        st.session_state["analyzed_data"] = {"type": "chi_tiet_sach", "data": info}
+                        status_box.update(label="Đã tải danh sách ấn bản thành công", state="complete")
+
+    # HIỂN THỊ KẾT QUẢ
+    if st.session_state.get("analyzed_data"):
+        res = st.session_state["analyzed_data"]
+
+        # 1. TRƯỜNG HỢP: SÁCH ĐƠN LẺ (doc_sach)
+        if res["type"] == "doc_sach":
+            book = res["data"]
+            title = book["title"]
+            page_urls = book["page_urls"]
+            total_pages = book["total_pages"]
+            preview_url = book["preview_url"]
+            doc_url = book["doc_url"]
+
+            offline_path, offline_sz = downloader.find_offline_pdf(title, CFG.get("storage_dir"))
+
+            st.markdown('<div class="vb-card-result">', unsafe_allow_html=True)
+            col_cov, col_det = st.columns([1, 3.5], gap="medium")
+
+            with col_cov:
+                if preview_url:
+                    st.image(preview_url, use_container_width=True)
+                else:
+                    st.markdown("<div style='text-align:center;font-size:42px;padding:30px;background:#f8fafc;border-radius:12px;'>📖</div>", unsafe_allow_html=True)
+
+            with col_det:
+                st.markdown(f"<h3 style='margin-top:0; color:#0f172a;'>{title}</h3>", unsafe_allow_html=True)
+                st.caption(f"📄 Tổng số: **{total_pages} trang**  •  📚 Bản gốc NXB Giáo Dục")
+                st.markdown("**Đường dẫn sách đang mở:**")
+                st.code(doc_url, language=None)
+
+                if offline_path and os.path.exists(offline_path):
+                    st.success(f"File PDF đã có sẵn trong kho lưu trữ ({offline_sz:.1f} MB)")
+                    try:
+                        with open(offline_path, "rb") as f:
+                            file_data = f.read()
+                        st.download_button(
+                            label=f"📥 Tải PDF có sẵn ({offline_sz:.1f} MB)",
+                            data=file_data,
+                            file_name=os.path.basename(offline_path),
+                            mime="application/pdf",
+                            type="primary",
+                            use_container_width=True
+                        )
+                    except Exception as e:
+                        st.error(f"Lỗi đọc file từ máy: {e}")
+                else:
+                    if st.button(f"📥 Bắt đầu tải & đóng gói PDF ({total_pages} trang)", type="primary", use_container_width=True):
+                        p_bar = st.progress(0)
+                        p_label = st.empty()
+
+                        def progress_cb(current, total, msg):
+                            pct = int((current / total) * 100) if total else 0
+                            p_bar.progress(pct)
+                            p_label.text(f"{msg} ({current}/{total})")
+
+                        target_save = None
+                        if CFG.get("storage_dir") and os.path.exists(CFG.get("storage_dir")):
+                            target_save = os.path.join(CFG.get("storage_dir"), downloader.sanitize_filename(title) + ".pdf")
+
+                        with st.spinner("Đang tải các trang ảnh gốc độ phân giải cao..."):
+                            pdf_bytes, sz_mb, dl_err = downloader.download_pages_and_build_pdf(
+                                page_urls=page_urls, title=title, progress_callback=progress_cb, save_path=target_save, max_workers=8
+                            )
+
+                        if dl_err:
+                            st.error(dl_err)
+                        else:
+                            p_bar.progress(100)
+                            p_label.text(f"✅ Hoàn tất đóng gói! Kích thước file: {sz_mb:.1f} MB.")
+                            st.download_button(
+                                label=f"💾 Lưu file PDF về máy ({sz_mb:.1f} MB)",
+                                data=pdf_bytes,
+                                file_name=f"{downloader.sanitize_filename(title)}.pdf",
+                                mime="application/pdf",
+                                type="primary",
+                                use_container_width=True
+                            )
+
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # 2. TRƯỜNG HỢP: MÔN HỌC NHIỀU ẤN BẢN (chi_tiet_sach)
+        elif res["type"] == "chi_tiet_sach":
+            detail = res["data"]
+            st.markdown('<div class="vb-card-result">', unsafe_allow_html=True)
+            st.markdown(f"<h3 style='margin-top:0;'>📚 {detail['main_title']}</h3>", unsafe_allow_html=True)
+            st.caption(f"Tìm thấy {len(detail['editions'])} ấn bản (Sách giáo viên, Sách giáo khoa, Vở bài tập). Nhấp chọn ấn bản bên dưới để tải.")
+
+            cols_ed = st.columns(min(len(detail['editions']), 3) if detail['editions'] else 1)
+            for i, ed in enumerate(detail['editions']):
+                with cols_ed[i % len(cols_ed)]:
+                    off_path, off_sz = downloader.find_offline_pdf(ed["title"], CFG.get("storage_dir"))
+                    status_badge = f"<span style='color:#059669; font-size:11px; font-weight:700;'>Có sẵn ({off_sz:.1f} MB)</span>" if off_path else ""
+
+                    st.markdown(f"""
+                    <div class="vb-edition-card">
+                        <div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                <span style="background:{ed['badge_color']}; color:#fff; font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px;">
+                                    {ed['type_label']}
+                                </span>
+                                {status_badge}
+                            </div>
+                            <div style="font-size:14px; font-weight:700; line-height:1.4; color:#0f172a; margin-bottom:12px;">
+                                {ed['title']}
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    if st.button("Mở tải sách này", key=f"sel_ed_{i}", use_container_width=True):
+                        st.session_state["current_url_input"] = ed["doc_url"]
+                        st.session_state["last_analyzed_url"] = "" # ép phân tích lại
+                        st.rerun()
+
+            st.markdown('</div>', unsafe_allow_html=True)
+
+
+# ------------------------------------------
+# TAB 2: KHO SÁCH GOOGLE DRIVE
+# ------------------------------------------
+with tab_drive:
+    drive_date = CFG.get("drive_date", "")
+    main_drive_url = CFG.get("drive_link", "#")
+
+    render_html(f"""
+    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:28px; margin-bottom:24px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+            <div>
+                <span style="font-size:11px; font-weight:700; color:#0f766e; letter-spacing:0.08em; text-transform:uppercase;">THƯ VIỆN ĐIỆN TỬ DỰ PHÒNG</span>
+                <h2 style="margin:4px 0 8px; color:#0f172a; font-size:24px;">Kho sách Google Drive Trọn Bộ</h2>
+                <div style="font-size:14px; color:#64748b; line-height:1.5;">
+                    Toàn bộ file PDF sách giáo viên, sách giáo khoa và sách bài tập chuẩn bản gốc từ lớp 1 đến lớp 12 được phân loại sẵn.
+                </div>
+            </div>
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px 18px; border-radius:12px; text-align:center;">
+                <div style="font-size:18px; font-weight:800; color:#15803d;">1.700+ đầu sách</div>
+                <div style="font-size:12px; color:#166534;">Dung lượng ~52 GB • Cập nhật {drive_date}</div>
+            </div>
+        </div>
+    </div>
+    """)
+
+    st.link_button("☁️ Mở Kho Sách Google Drive Đầy Đủ (52 GB) ↗", main_drive_url, type="primary", use_container_width=True)
+    st.code(main_drive_url, language=None)
+
+    st.markdown("#### Danh mục thư mục theo cấp học")
+    col_g1, col_g2, col_g3 = st.columns(3, gap="medium")
+
+    with col_g1:
+        st.markdown("""
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
+            <div style="font-size:24px; margin-bottom:8px;">🎒</div>
+            <div style="font-weight:700; font-size:16px; color:#0f172a;">Khối Tiểu Học</div>
+            <div style="font-size:13px; color:#64748b; margin-top:4px;">Lớp 1, Lớp 2, Lớp 3, Lớp 4, Lớp 5</div>
+            <div style="font-size:12px; color:#059669; margin-top:8px; font-weight:600;">Đầy đủ SGK, SGV, VBT</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_g2:
+        st.markdown("""
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
+            <div style="font-size:24px; margin-bottom:8px;">🏫</div>
+            <div style="font-weight:700; font-size:16px; color:#0f172a;">Khối THCS</div>
+            <div style="font-size:13px; color:#64748b; margin-top:4px;">Lớp 6, Lớp 7, Lớp 8, Lớp 9</div>
+            <div style="font-size:12px; color:#059669; margin-top:8px; font-weight:600;">Đầy đủ SGK, SGV, SBT</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_g3:
+        st.markdown("""
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
+            <div style="font-size:24px; margin-bottom:8px;">🎓</div>
+            <div style="font-weight:700; font-size:16px; color:#0f172a;">Khối THPT</div>
+            <div style="font-size:13px; color:#64748b; margin-top:4px;">Lớp 10, Lớp 11, Lớp 12</div>
+            <div style="font-size:12px; color:#059669; margin-top:8px; font-weight:600;">Đầy đủ Chuyên đề &amp; Bài tập</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+
+# ==========================================
+# 5. CÔNG CỤ QUẢN TRỊ (NẾU CÓ PASSWORD)
+# ==========================================
+if ADMIN_PASSWORD:
+    with st.expander("⚙️ Công cụ Quản trị viên (Đồng bộ sách)", expanded=False):
+        admin_is_authorized = (
+            st.session_state.get("admin_password_verified") == ADMIN_PASSWORD
+        )
+
+        if not admin_is_authorized:
+            st.info("Khu vực này chỉ dành cho quản trị viên.")
+            pwd = st.text_input("Mật khẩu quản trị:", type="password", key="admin_pwd")
+            if st.button("Xác nhận", key="btn_admin_login"):
+                if hmac.compare_digest(pwd, ADMIN_PASSWORD):
+                    st.session_state["admin_password_verified"] = ADMIN_PASSWORD
+                    st.rerun()
+                else:
+                    st.error("Sai mật khẩu.")
+        else:
+            st.markdown("Kiểm tra và cập nhật cơ sở dữ liệu sách từ NXB Giáo dục.")
+            if st.button("Bắt đầu quét dữ liệu", key="btn_check_sync"):
+                p_bar = st.progress(0)
+                p_text = st.empty()
+                sync_res = sync_manager.check_for_new_books(lambda msg, pct: (p_bar.progress(pct), p_text.text(msg)))
+                p_bar.progress(100)
+                p_text.empty()
+
+                st.write(f"Online: {sync_res['total_online']} | Hiện tại: {sync_res['total_current']}")
+                if sync_res["has_new"]:
+                    st.success(f"Phát hiện {len(sync_res['new_books'])} sách mới.")
+                    if st.button("Cập nhật CSDL", type="primary"):
+                        sync_manager.update_catalog_and_report(sync_res["all_online_books"])
+                        st.success("Đã cập nhật!")
+                else:
+                    st.info("Dữ liệu đã đồng bộ hoàn toàn.")
+
+
+# ==========================================
+# 6. FOOTER ĐẦY ĐỦ KẾT NỐI & LIÊN HỆ
+# ==========================================
+social_pills_html = ""
+for s in CFG.get("socials", []):
+    url = s.get("url", "#")
+    name = s.get("title") or s.get("name", "")
+    color = s.get("color", "#2563eb")
+    social_pills_html += f"""
+    <a href="{url}" target="_blank" rel="noopener noreferrer" class="vb-social-pill" style="background-color: {color};">
+        <span>🔗</span> {name}
     </a>
     """
 
-render_html(f"""
-<div class="vb-nav-bar">
-    <div class="vb-brand-left">
-        <div class="vb-brand-icon">📖</div>
-        <div>
-            <div style="display:flex;align-items:center;">
-                <span class="vb-brand-title">{CFG['app_name']}</span>
-                <span class="vb-brand-badge">{CFG['badge']}</span>
-            </div>
-            <div style="font-size:12px;color:#64748b;font-weight:600;">{CFG['app_title']}</div>
-        </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;">
-        {drive_btn_html}
-        <div class="vb-nav-tagline">{CFG['tagline']}</div>
-    </div>
-</div>
-""")
-
-# ==========================================
-# 4. LOAD DỮ LIỆU SÁCH & THỐNG KÊ
-# ==========================================
-@st.cache_data
-def load_books_data():
-    json_path = "books_data.json"
-    if not os.path.exists(json_path):
-        return []
-    try:
-        with open(json_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return []
-
-all_books = load_books_data()
-total_books_count = len(all_books)
-
-# Phân loại thống kê
-count_sgv = sum(1 for b in all_books if b.get("type") == "SGV")
-count_sgk = sum(1 for b in all_books if b.get("type") == "SGK")
-count_sbt = sum(1 for b in all_books if b.get("type") == "SBT_VBT")
-count_other = sum(1 for b in all_books if b.get("type") == "Tai_Lieu")
-
-count_thong_nhat = sum(1 for b in all_books if "thống nhất" in b.get("series_label", "").lower())
-count_ctst = sum(1 for b in all_books if "chân trời" in b.get("series_label", "").lower())
-
-# Thống kê dung lượng offline nếu có
-downloaded_dir = "downloaded_books"
-total_downloaded_files = 0
-total_downloaded_gb = 0.0
-if os.path.exists(downloaded_dir):
-    try:
-        total_downloaded_files = sum(len(f) for r, d, f in os.walk(downloaded_dir) if any(x.endswith('.pdf') for x in f))
-        bytes_sz = sum(os.path.getsize(os.path.join(r, x)) for r, d, f in os.walk(downloaded_dir) for x in f if x.endswith('.pdf'))
-        total_downloaded_gb = bytes_sz / (1024 * 1024 * 1024)
-    except Exception:
-        pass
-
-# ==========================================
-# 5. CÁC THẺ THỐNG KÊ (STAT CARDS)
-# ==========================================
-render_html(f"""
-<div class="vb-stats-grid">
-    <div class="vb-stat-card">
-        <div class="vb-stat-icon-wrap" style="background:#eff6ff;color:#2563eb;">📚</div>
-        <div>
-            <div class="vb-stat-num">{total_books_count:,}</div>
-            <div class="vb-stat-label">Tổng số đầu sách điện tử</div>
-        </div>
-    </div>
-    <div class="vb-stat-card">
-        <div class="vb-stat-icon-wrap" style="background:#f0fdf4;color:#059669;">📘</div>
-        <div>
-            <div class="vb-stat-num">{count_sgv:,}</div>
-            <div class="vb-stat-label">Sách Giáo Viên (SGV)</div>
-        </div>
-    </div>
-    <div class="vb-stat-card">
-        <div class="vb-stat-icon-wrap" style="background:#fef2f2;color:#dc2626;">📕</div>
-        <div>
-            <div class="vb-stat-num">{count_sgk:,}</div>
-            <div class="vb-stat-label">Sách Giáo Khoa (SGK)</div>
-        </div>
-    </div>
-    <div class="vb-stat-card">
-        <div class="vb-stat-icon-wrap" style="background:#fffbeb;color:#d97706;">📙</div>
-        <div>
-            <div class="vb-stat-num">{count_sbt:,}</div>
-            <div class="vb-stat-label">Sách / Vở Bài Tập (SBT)</div>
-        </div>
-    </div>
-</div>
-""")
-
-# ==========================================
-# 6. GIAO DIỆN TÌM KIẾM & BỘ LỌC ĐA NĂNG
-# ==========================================
-st.markdown('<div class="vb-card"><div class="vb-card-title">🔍 Bộ lọc &amp; Tra cứu sách giáo khoa / giáo viên</div>', unsafe_allow_html=True)
-
-col_s1, col_s2, col_s3, col_s4 = st.columns([2.5, 1.5, 1.2, 1.2])
-
-with col_s1:
-    search_keyword = st.text_input("Tên môn học / Tiêu đề sách:", placeholder="Ví dụ: Toán 12, Tiếng Việt, Tin học, Ngữ văn...", label_visibility="collapsed")
-
-with col_s2:
-    series_options = ["Tất cả bộ sách", "Bộ SGK Thống nhất", "Chân trời sáng tạo"]
-    selected_series = st.selectbox("Bộ sách:", series_options, label_visibility="collapsed")
-
-with col_s3:
-    grade_options = ["Tất cả lớp"] + [f"Lớp {i}" for i in range(1, 13)] + ["Lớp dùng chung"]
-    selected_grade = st.selectbox("Khối lớp:", grade_options, label_visibility="collapsed")
-
-with col_s4:
-    type_options = ["Tất cả loại sách", "SGV (Giáo viên)", "SGK (Giáo khoa)", "SBT / VBT (Bài tập)", "Tài liệu tập huấn"]
-    selected_type = st.selectbox("Loại sách:", type_options, label_visibility="collapsed")
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Xử lý lọc dữ liệu
-filtered_books = all_books
-
-# 1. Lọc theo từ khóa
-if search_keyword.strip():
-    kw = search_keyword.strip().lower()
-    filtered_books = [
-        b for b in filtered_books
-        if kw in b.get("title", "").lower() or kw in b.get("subject", "").lower()
-    ]
-
-# 2. Lọc theo bộ sách
-if selected_series == "Bộ SGK Thống nhất":
-    filtered_books = [b for b in filtered_books if "thống nhất" in b.get("series_label", "").lower()]
-elif selected_series == "Chân trời sáng tạo":
-    filtered_books = [b for b in filtered_books if "chân trời" in b.get("series_label", "").lower()]
-
-# 3. Lọc theo khối lớp
-if selected_grade != "Tất cả lớp":
-    filtered_books = [b for b in filtered_books if b.get("grade_label") == selected_grade]
-
-# 4. Lọc theo loại sách
-if "SGV" in selected_type:
-    filtered_books = [b for b in filtered_books if b.get("type") == "SGV"]
-elif "SGK" in selected_type:
-    filtered_books = [b for b in filtered_books if b.get("type") == "SGK"]
-elif "SBT" in selected_type:
-    filtered_books = [b for b in filtered_books if b.get("type") == "SBT_VBT"]
-elif "Tài liệu" in selected_type:
-    filtered_books = [b for b in filtered_books if b.get("type") == "Tai_Lieu"]
-
-# ==========================================
-# 7. HIỂN THỊ KẾT QUẢ TÌM KIẾM
-# ==========================================
-col_res_l, col_res_r = st.columns([3, 1])
-with col_res_l:
-    st.markdown(f"**Kết quả tìm kiếm:** Tìm thấy **{len(filtered_books):,}** cuốn sách phù hợp")
-with col_res_r:
-    if total_downloaded_files > 0:
-        st.markdown(f"<div style='text-align:right;font-size:12px;color:#059669;font-weight:700;'>💾 Đã lưu offline: {total_downloaded_files} file ({total_downloaded_gb:.1f} GB)</div>", unsafe_allow_html=True)
-
-if not filtered_books:
-    st.info("💡 Không tìm thấy cuốn sách nào khớp với điều kiện tìm kiếm. Hãy thử từ khóa khác!")
-else:
-    # Phân trang hiển thị (mỗi trang 50 cuốn)
-    items_per_page = 40
-    total_pages = max(1, (len(filtered_books) + items_per_page - 1) // items_per_page)
-    
-    col_p1, col_p2 = st.columns([1, 4])
-    with col_p1:
-        current_page = st.number_input("Trang hiển thị:", min_value=1, max_value=total_pages, value=1, step=1)
-    
-    start_idx = (current_page - 1) * items_per_page
-    end_idx = start_idx + items_per_page
-    page_books = filtered_books[start_idx:end_idx]
-
-    # Bảng kết quả HTML sạch đẹp
-    rows_html = []
-    type_badge_map = {
-        "SGV": '<span class="badge-sgv">📘 Giáo viên</span>',
-        "SGK": '<span class="badge-sgk">📕 Giáo khoa</span>',
-        "SBT_VBT": '<span class="badge-sbt">📙 Bài tập</span>',
-        "Tai_Lieu": '<span class="badge-other">📑 Tập huấn</span>'
-    }
-
-    for idx, b in enumerate(page_books, start=start_idx + 1):
-        btype = b.get("type", "Tai_Lieu")
-        badge_html = type_badge_map.get(btype, '<span class="badge-other">Khác</span>')
-        series_label = b.get("series_label", "Bộ SGK Thống nhất")
-        title = b.get("title", "Chưa rõ tên")
-        subject = b.get("subject", "")
-        grade = b.get("grade_label", "")
-        url = b.get("doc_url", "#")
-
-        row = f"""
-        <tr style="border-bottom: 1px solid #f1f5f9;">
-            <td style="padding: 10px 8px; text-align: center; color: #94a3b8; font-size: 12px; font-weight: 700;">{idx}</td>
-            <td style="padding: 10px 8px; font-weight: 700; color: #1e293b; font-size: 13px;">{grade}</td>
-            <td style="padding: 10px 8px; color: #475569; font-size: 13px; font-weight: 600;">{subject}</td>
-            <td style="padding: 10px 8px; font-weight: 700; color: #0f172a; font-size: 13.5px;">{title}</td>
-            <td style="padding: 10px 8px; text-align: center;">{badge_html}</td>
-            <td style="padding: 10px 8px; color: #64748b; font-size: 12px; font-weight: 600;">{series_label}</td>
-            <td style="padding: 10px 8px; text-align: center;">
-                <a href="{url}" target="_blank" class="vb-read-btn">Đọc trực tiếp ↗</a>
-            </td>
-        </tr>
-        """
-        rows_html.append(row)
-
-    table_html = f"""
-    <div style="overflow-x: auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; margin-top: 8px;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left;">
-            <thead>
-                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; font-size: 12px; color: #64748b; font-weight: 800;">
-                    <th style="padding: 10px 8px; text-align: center; width: 45px;">STT</th>
-                    <th style="padding: 10px 8px; width: 75px;">KHỐI</th>
-                    <th style="padding: 10px 8px; width: 170px;">MÔN HỌC</th>
-                    <th style="padding: 10px 8px;">TÊN ẤN BẢN SÁCH</th>
-                    <th style="padding: 10px 8px; text-align: center; width: 110px;">PHÂN LOẠI</th>
-                    <th style="padding: 10px 8px; width: 160px;">BỘ SÁCH</th>
-                    <th style="padding: 10px 8px; text-align: center; width: 120px;">THAO TÁC</th>
-                </tr>
-            </thead>
-            <tbody>
-                {''.join(rows_html)}
-            </tbody>
-        </table>
-    </div>
-    """
-    render_html(table_html)
-
-# ==========================================
-# 8. HỆ SINH THÁI ỨNG DỤNG VIETAPPS
-# ==========================================
-eco_cards_html = []
-for app in CFG["ecosystem"]:
-    is_current = (app.get("id", "").lower() == "vietBook".lower()) or (app.get("url") == "#")
-    if is_current:
-        action_btn_html = """
-        <div class="vb-app-item-btn-current">
-            Đang sử dụng
-        </div>
-        """
-    else:
-        action_btn_html = f"""
-        <a href="{app['url']}" target="_blank" class="vb-app-item-btn">
-            Bắt đầu sử dụng ↗
-        </a>
-        """
-
-    card_html = f"""
-    <div class="vb-app-item-card {'vb-app-card-current' if is_current else ''}">
-        <div>
-            <div class="vb-app-item-title">
-                <span>{app['icon']}</span>
-                <span>{app['name']}</span>
-                <span class="vb-app-item-badge" style="background-color: {app['badge_color']};">{app['badge']}</span>
-                <span style="font-size:11.5px;color:#64748b;font-weight:600;">– {app['tagline']}</span>
-            </div>
-            <div class="vb-app-item-desc">{app['description']}</div>
-        </div>
-        {action_btn_html}
-    </div>
-    """
-    eco_cards_html.append(card_html)
+eco_links_html = " • ".join([
+    f'<a href="{app.get("url", "#")}" target="_blank" class="vb-eco-link">{app.get("name")}</a>'
+    for app in CFG.get("ecosystem", []) if app.get("url", "#") != "#"
+])
 
 render_html(f"""
-<div class="vb-eco-wrapper">
-    <div class="vb-eco-heading">
-        <span>🌐 Các ứng dụng trong hệ sinh thái {CFG['master_name']}:</span>
+<div class="vb-footer-container">
+    <div style="font-weight:700; font-size:14px; color:#475569;">
+        {CFG.get('connectMessage') or CFG.get('connect_message', 'Kết nối cộng đồng vietApps')}
     </div>
-    <div class="vb-eco-grid">
-        {''.join(eco_cards_html)}
+    <div class="vb-social-wrapper">
+        {social_pills_html}
     </div>
-</div>
-""")
-
-# ==========================================
-# 9. FOOTER KẾT NỐI MẠNG XÃ HỘI
-# ==========================================
-social_pills = []
-for s in CFG["socials"]:
-    pill = f"""<a href="{s['url']}" target="_blank" class="vb-social-badge" style="background-color: {s['color']};">
-        <span>{s['name']}</span>
-    </a>"""
-    social_pills.append(pill)
-
-render_html(f"""
-<div class="vb-bottom-footer">
-    <div class="vb-socials-group">
-        <span style="font-size:12px;font-weight:700;color:#64748b;">💬 {CFG['connect_message']}:</span>
-        {''.join(social_pills)}
-    </div>
-    <div class="vb-footer-copy">
-        {CFG['copyright']} • {CFG['support_email']}
+    {f'<div class="vb-eco-wrapper">Hệ sinh thái: {eco_links_html}</div>' if eco_links_html else ''}
+    <div class="vb-copyright-text">
+        {CFG['copyright']} • Email hỗ trợ: <a href="mailto:{CFG['support_email']}" style="color:#64748b; text-decoration:none;">{CFG['support_email']}</a>
     </div>
 </div>
 """)

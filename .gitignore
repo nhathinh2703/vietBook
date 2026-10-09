@@ -5,6 +5,7 @@ __pycache__/
 *.tmp
 venv/
 env/
+.venv/
 
 # Data & Large Media
 downloaded_books/

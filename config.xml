@@ -4,17 +4,50 @@
     <brand>
         <masterName>vietApps</masterName>
         <appName>vietBook</appName>
-        <badge>FREE</badge>
+        <badge>Miễn phí</badge>
         <tagline>Hệ sinh thái ứng dụng miễn phí phục vụ cộng đồng</tagline>
-        <appTitle>Thư viện tra cứu &amp; Tải sách giáo khoa điện tử</appTitle>
-        <heroTitle>Kho sách điện tử &amp; Sách giáo viên toàn diện</heroTitle>
-        <appDescription>Hệ thống tra cứu tức thì và tải trọn bộ sách giáo viên (SGV), sách giáo khoa (SGK), sách bài tập (SBT) chất lượng gốc từ Bộ GD&amp;ĐT (Bộ thống nhất, Chân trời sáng tạo, Cánh diều).</appDescription>
-        <copyright>© 2026 vietApps • vietBook – Thư viện sách điện tử</copyright>
+        <appTitle>Trình tải sách giáo khoa gốc &amp; Kho Google Drive</appTitle>
+        <heroTitle>Trình tải sách giáo khoa bản gốc</heroTitle>
+        <appDescription>Hỗ trợ dán link tải sách bản gốc chất lượng cao từ taphuan.nxbgd.vn và chia sẻ trọn bộ sách giáo viên, sách giáo khoa, sách bài tập trên Google Drive.</appDescription>
+        <copyright>© 2026 vietApps • vietBook</copyright>
         <supportEmail>vietapps.official@gmail.com</supportEmail>
-        <connectMessage>Kết nối với chúng tôi để xem hướng dẫn, cập nhật sách mới và sử dụng các tiện ích miễn phí</connectMessage>
-        <!-- Link Google Drive chia sẻ (có thể điền link sau khi upload xong) -->
-        <driveLink></driveLink>
+        <connectMessage>Kết nối cộng đồng vietApps</connectMessage>
+        <!-- Link Google Drive trọn bộ -->
+        <driveLink>https://drive.google.com/drive/folders/1iXlCFyOBZdM5AfOojn4h3WCVP-mAXdSp?usp=sharing</driveLink>
+        <driveDate>05/10/2026</driveDate>
+        <!-- Thư mục lưu trữ sách tải về máy / đồng bộ Google Drive -->
+        <booksStorageDir>D:\DuLieu\SachDienTu</booksStorageDir>
     </brand>
+
+    <!-- KHO SÁCH GOOGLE DRIVE TRỌN BỘ & THEO TỪNG KHỐI LỚP -->
+    <driveLinks>
+        <!-- Link trọn bộ 12 khối lớp -->
+        <allGrades title="Trọn bộ sách giáo khoa điện tử (52 GB)" url="https://drive.google.com/drive/folders/1iXlCFyOBZdM5AfOojn4h3WCVP-mAXdSp?usp=sharing" date="05/10/2026"></allGrades>
+        
+        <!-- Khối Tiểu học (Lớp 1 - 5) -->
+        <gradeGroup id="tieuhoc" name="Khối Tiểu học" subtitle="Lớp 1, 2, 3, 4, 5" icon="🎒" url="">
+            <item grade="1" name="Lớp 1" url=""></item>
+            <item grade="2" name="Lớp 2" url=""></item>
+            <item grade="3" name="Lớp 3" url=""></item>
+            <item grade="4" name="Lớp 4" url=""></item>
+            <item grade="5" name="Lớp 5" url=""></item>
+        </gradeGroup>
+
+        <!-- Khối THCS (Lớp 6 - 9) -->
+        <gradeGroup id="thcs" name="Khối THCS" subtitle="Lớp 6, 7, 8, 9" icon="🏫" url="">
+            <item grade="6" name="Lớp 6" url=""></item>
+            <item grade="7" name="Lớp 7" url=""></item>
+            <item grade="8" name="Lớp 8" url=""></item>
+            <item grade="9" name="Lớp 9" url=""></item>
+        </gradeGroup>
+
+        <!-- Khối THPT (Lớp 10 - 12) -->
+        <gradeGroup id="thpt" name="Khối THPT" subtitle="Lớp 10, 11, 12" icon="🎓" url="">
+            <item grade="10" name="Lớp 10" url=""></item>
+            <item grade="11" name="Lớp 11" url=""></item>
+            <item grade="12" name="Lớp 12" url=""></item>
+        </gradeGroup>
+    </driveLinks>
 
     <!-- HỆ SINH THÁI CÁC ỨNG DỤNG -->
     <ecosystem>
@@ -22,8 +55,8 @@
             <name>vietBook</name>
             <badge>Miễn phí</badge>
             <badgeColor>#10b981</badgeColor>
-            <tagline>Thư viện tra cứu &amp; Tải sách điện tử</tagline>
-            <description>Kho sách điện tử trọn bộ từ lớp 1 đến lớp 12: Bộ SGK Thống nhất, Chân trời sáng tạo, Cánh diều. Tải nhanh chất lượng gốc miễn phí.</description>
+            <tagline>Tải sách &amp; Kho Google Drive</tagline>
+            <description>Tải sách bản gốc từ taphuan.nxbgd.vn và nhận link trọn bộ Google Drive miễn phí.</description>
             <url>#</url>
             <icon>📖</icon>
         </app>
@@ -31,8 +64,8 @@
             <name>vietTeach</name>
             <badge>Miễn phí</badge>
             <badgeColor>#2563eb</badgeColor>
-            <tagline>Tiện ích giáo dục và soạn bài giảng</tagline>
-            <description>Công cụ hỗ trợ quý thầy cô giáo tạo bài giảng, giáo án, câu hỏi trắc nghiệm và tiện ích giảng dạy trực quan tại trường học.</description>
+            <tagline>Soạn bài giảng &amp; Giáo án</tagline>
+            <description>Công cụ hỗ trợ thầy cô tạo bài giảng, câu hỏi trắc nghiệm và tiện ích giảng dạy.</description>
             <url>https://vietteach.streamlit.app/</url>
             <icon>🎓</icon>
         </app>
@@ -40,8 +73,8 @@
             <name>viFix</name>
             <badge>Miễn phí</badge>
             <badgeColor>#f59e0b</badgeColor>
-            <tagline>Quản lý sửa chữa và bảo hành điện tử</tagline>
-            <description>Công cụ dành cho kỹ thuật viên và cửa hàng: Tạo phiếu nhận máy, thẻ bảo hành điện tử QR, nhắc hẹn khách và báo cáo doanh thu.</description>
+            <tagline>Bảo hành điện tử &amp; Sửa chữa</tagline>
+            <description>Tạo phiếu nhận máy, thẻ bảo hành điện tử QR và nhắc hẹn khách hàng.</description>
             <url>https://vifix.vercel.app/</url>
             <icon>🔧</icon>
         </app>
@@ -50,31 +83,36 @@
     <!-- KẾT NỐI MẠNG XÃ HỘI -->
     <socials>
         <social id="zalo">
-            <name>Zalo Group</name>
+            <name>Zalo</name>
+            <title>Nhóm Zalo</title>
             <enabled>true</enabled>
             <url>https://zalo.me/g/lapbvhp0mku5bvgle0a1</url>
             <color>#0068FF</color>
         </social>
         <social id="facebook_page">
-            <name>Facebook Page</name>
+            <name>Fanpage</name>
+            <title>Facebook Page</title>
             <enabled>true</enabled>
             <url>https://www.facebook.com/vietapps.official</url>
             <color>#1877F2</color>
         </social>
         <social id="facebook_group">
-            <name>Facebook Group</name>
+            <name>Cộng đồng</name>
+            <title>Facebook Group</title>
             <enabled>true</enabled>
             <url>https://www.facebook.com/groups/1143352114790841</url>
             <color>#0866FF</color>
         </social>
         <social id="youtube">
             <name>YouTube</name>
+            <title>Kênh YouTube</title>
             <enabled>true</enabled>
             <url>https://www.youtube.com/@vietApps</url>
             <color>#FF0000</color>
         </social>
         <social id="tiktok">
             <name>TikTok</name>
+            <title>Kênh TikTok</title>
             <enabled>true</enabled>
             <url>https://www.tiktok.com/@vietapps.official</url>
             <color>#000000</color>
